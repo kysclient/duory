@@ -16,10 +16,11 @@ export default function AuthPage() {
     setMessage("");
 
     try {
+      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          emailRedirectTo: `${redirectUrl}/onboarding`,
         },
       });
 
@@ -116,7 +117,13 @@ export default function AuthPage() {
           <div className="space-y-3">
             <button
               type="button"
-              onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/onboarding` } })}
+              onClick={() => {
+                const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+                supabase.auth.signInWithOAuth({ 
+                  provider: 'google', 
+                  options: { redirectTo: `${redirectUrl}/onboarding` } 
+                });
+              }}
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-background py-3.5 text-sm font-medium transition-all hover:bg-muted active:scale-95"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -142,7 +149,13 @@ export default function AuthPage() {
 
             <button
               type="button"
-              onClick={() => supabase.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/onboarding` } })}
+              onClick={() => {
+                const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+                supabase.auth.signInWithOAuth({ 
+                  provider: 'kakao', 
+                  options: { redirectTo: `${redirectUrl}/onboarding` } 
+                });
+              }}
               className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] py-3.5 text-sm font-medium text-[#000000] transition-all hover:bg-[#FEE500]/90 active:scale-95"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
