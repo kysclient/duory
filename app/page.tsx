@@ -8,13 +8,20 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
+import PullToRefresh from "react-simple-pull-to-refresh";
 
 export default function Home() {
-  const { user, couple, daysCount } = useAuth();
+  const { user, couple, daysCount, refreshUser } = useAuth();
   const router = useRouter();
   
   // 커플 연결 완료 → 메인 페이지 표시
   const isConnected = !!couple;
+
+  const handleRefresh = async () => {
+    await refreshUser();
+    // 페이지 새로고침을 트리거하기 위해 약간의 딜레이
+    return new Promise((resolve) => setTimeout(resolve, 500));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,16 +58,26 @@ export default function Home() {
             </div>
           </header>
 
-          {/* 메인 피드 */}
-          <main className="mx-auto max-w-lg pb-20">
-            <MemoryFeed />
-          </main>
+          {/* 메인 피드 with Pull-to-Refresh */}
+          <PullToRefresh
+            onRefresh={handleRefresh}
+            pullingContent=""
+            refreshingContent={
+              <div className="flex justify-center py-4">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            }
+          >
+            <main className="mx-auto max-w-lg pb-20">
+              <MemoryFeed />
+            </main>
+          </PullToRefresh>
 
           {/* FAB - 추억 작성 버튼 */}
           <CreateMemoryModal />
         </>
       ) : (
-        <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center pb-20">
           <div className="mb-6 flex flex-row items-center">
             <Image
               src="/logo_v1.png"

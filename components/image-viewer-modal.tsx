@@ -63,7 +63,11 @@ export function ImageViewerModal({
             e.stopPropagation();
             onOpenChange(false);
           }}
-          className="absolute right-4 top-4 z-[100] rounded-full bg-black/70 p-2.5 text-white backdrop-blur-sm transition-colors hover:bg-white/20 active:scale-95 border border-white/20"
+          className="absolute z-[100] rounded-full bg-black/70 p-2.5 text-white backdrop-blur-sm transition-colors hover:bg-white/20 active:scale-95 border border-white/20"
+          style={{
+            top: 'max(1rem, env(safe-area-inset-top, 0px))',
+            right: '1rem'
+          }}
           aria-label="닫기"
         >
           <X className="h-6 w-6" />

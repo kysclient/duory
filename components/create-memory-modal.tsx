@@ -150,7 +150,11 @@ export function CreateMemoryModal() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <button 
-          className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-95"
+          className="fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-95"
+          style={{
+            bottom: 'calc(5rem + max(env(safe-area-inset-bottom), 0px))',
+            right: '1.5rem'
+          }}
           aria-label="추억 작성하기"
         >
           <Plus className="h-7 w-7" strokeWidth={2.5} />
@@ -194,10 +198,10 @@ export function CreateMemoryModal() {
               <button
                 onClick={() => setIsPublic(!isPublic)}
                 className={cn(
-                  "mb-3 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                  "mb-3 flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium transition-colors",
                   isPublic 
-                    ? "border-sky-200 bg-sky-50 text-sky-600" 
-                    : "border-stone-200 bg-stone-50 text-stone-600"
+                    ? "  text-sky-600" 
+                    : "  text-primary"
                 )}
               >
                 {isPublic ? (

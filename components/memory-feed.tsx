@@ -1,14 +1,15 @@
 "use client";
 
 import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useCoupleMemories } from "@/lib/hooks/use-memories";
+import { useCoupleMemories, MemoryWithAuthor } from "@/lib/hooks/use-memories";
 import { CommentSheet } from "@/components/comment-sheet";
 import { MemoryFeedSkeleton } from "@/components/memory-feed-skeleton";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { supabase } from "@/lib/supabase";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -28,9 +29,27 @@ import "dayjs/locale/ko";
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
 
-export function MemoryFeed() {
+export interface MemoryWithFirstComment extends MemoryWithAuthor {
+  first_comment?: {
+    id: string;
+    content: string;
+    user_id: string;
+    created_at: string;
+    author?: {
+      nickname: string;
+      avatar_url: string;
+    };
+  };
+}
+
+interface MemoryFeedProps {
+  publicOnly?: boolean; // 전체 공개 메모리만 표시할지 여부
+}
+
+export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
   const { user } = useAuth();
-  const { memories, loading, error, refresh, toggleLike, deleteMemory } = useCoupleMemories();
+  const { memories: rawMemories, loading, error, refresh, toggleLike, deleteMemory } = useCoupleMemories({ publicOnly });
+  const [memories, setMemories] = useState<MemoryWithFirstComment[]>([]);
   
   // 댓글 시트 상태 관리
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null);
@@ -47,6 +66,50 @@ export function MemoryFeed() {
   // AlertDialog 상태 관리
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
+
+  // 각 메모리의 첫 번째 댓글 가져오기
+  useEffect(() => {
+    const fetchFirstComments = async () => {
+      if (!rawMemories || rawMemories.length === 0) {
+        setMemories([]);
+        return;
+      }
+
+      const memoriesWithComments = await Promise.all(
+        rawMemories.map(async (memory) => {
+          try {
+            const { data: comments } = await supabase
+              .from("memory_comments")
+              .select(`
+                id,
+                content,
+                user_id,
+                created_at,
+                author:users!user_id (
+                  nickname,
+                  avatar_url
+                )
+              `)
+              .eq("memory_id", memory.id)
+              .order("created_at", { ascending: true })
+              .limit(1);
+
+            return {
+              ...memory,
+              first_comment: comments && comments.length > 0 ? comments[0] : undefined,
+            } as MemoryWithFirstComment;
+          } catch (error) {
+            console.error("첫 댓글 조회 실패:", error);
+            return { ...memory } as MemoryWithFirstComment;
+          }
+        })
+      );
+
+      setMemories(memoriesWithComments);
+    };
+
+    fetchFirstComments();
+  }, [rawMemories]);
 
   const handleCommentClick = (id: string) => {
     setActiveMemoryId(id);
@@ -239,6 +302,51 @@ export function MemoryFeed() {
                 )}
               </button>
             </div>
+
+            {/* 댓글 영역 (Instagram 스타일) */}
+            <div className="px-4 space-y-1">
+              {/* 좋아요 수 */}
+              {memory.likes_count > 0 && (
+                <div className="text-sm font-semibold">
+                  좋아요 {memory.likes_count}개
+                </div>
+              )}
+
+              {/* 첫 번째 댓글 */}
+              {memory.first_comment && (
+                <button
+                  onClick={() => handleCommentClick(memory.id)}
+                  className="block w-full text-left transition-opacity active:opacity-60"
+                >
+                  <p className="text-sm leading-snug">
+                    <span className="font-semibold mr-1.5">
+                      {memory.first_comment.author?.nickname || "알 수 없음"}
+                    </span>
+                    <span className="text-foreground/90">
+                      {memory.first_comment.content}
+                    </span>
+                  </p>
+                </button>
+              )}
+
+              {/* 댓글 더보기 */}
+              {memory.comments_count > 1 && (
+                <button
+                  onClick={() => handleCommentClick(memory.id)}
+                  className="block text-sm text-muted-foreground transition-opacity active:opacity-60"
+                >
+                  댓글 {memory.comments_count}개 모두 보기
+                </button>
+              )}
+
+              {/* 작성 시간 */}
+              <div className="text-xs text-muted-foreground pt-0.5">
+                {timeAgo}
+              </div>
+            </div>
+
+            {/* 하단 여백 */}
+            <div className="h-3" />
           </article>
         );
       })}

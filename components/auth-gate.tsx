@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = new Set([
   "/connect",
   "/privacy",
   "/terms",
+  "/settings",
 ]);
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -74,15 +75,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (!user.couple_id) {
       // 커플이 없어도 접근 가능한 페이지들
-      const allowedWithoutCouple = ["/connect", "/couple", "/profile", "/", "/memories", "/community"];
+      const allowedWithoutCouple = ["/connect", "/couple", "/profile", "/", "/memories", "/community", "/settings", "/privacy", "/terms"];
       if (!allowedWithoutCouple.includes(pathname)) {
         router.replace("/connect");
       }
       return;
     }
 
-    // 로그인 완료 상태면 공개 페이지에서는 메인으로 보내기
-    if (isPublicRoute && pathname !== "/") {
+    // 로그인 완료 상태면 공개 페이지에서는 메인으로 보내기 (단, 설정/약관 페이지는 제외)
+    const settingsRoutes = ["/settings", "/privacy", "/terms"];
+    if (isPublicRoute && pathname !== "/" && !settingsRoutes.includes(pathname)) {
       router.replace("/");
     }
   }, [loading, supabaseUser, user, pathname, isPublicRoute, router, graceActive]);

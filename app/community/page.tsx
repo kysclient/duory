@@ -2,9 +2,18 @@
 
 import { BottomNav } from "@/components/bottom-nav";
 import { MemoryFeed } from "@/components/memory-feed";
+import { useCoupleMemories } from "@/lib/hooks/use-memories";
 import Image from "next/image";
+import PullToRefresh from "react-simple-pull-to-refresh";
 
 export default function CommunityPage() {
+  const { refresh } = useCoupleMemories({ publicOnly: true });
+
+  const handleRefresh = async () => {
+    await refresh();
+    return new Promise((resolve) => setTimeout(resolve, 500));
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <main className="mx-auto max-w-lg">
@@ -25,8 +34,20 @@ export default function CommunityPage() {
           </div>
         </header>
 
-        {/* 추억 피드 */}
-        <MemoryFeed />
+        {/* 추억 피드 - 전체 공개 메모리만 표시 with Pull-to-Refresh */}
+        <PullToRefresh
+          onRefresh={handleRefresh}
+          pullingContent=""
+          refreshingContent={
+            <div className="flex justify-center py-4">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          }
+        >
+          <div>
+            <MemoryFeed publicOnly={true} />
+          </div>
+        </PullToRefresh>
       </main>
 
       <BottomNav />

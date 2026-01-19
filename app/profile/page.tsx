@@ -457,7 +457,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 추억 앨범 */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <div className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
               갤러리
             </div>
@@ -475,7 +475,7 @@ export default function ProfilePage() {
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
-          </div>
+          </div> */}
 
           {/* 설정 */}
           <div className="mb-4">
@@ -571,13 +571,13 @@ export default function ProfilePage() {
                 </DialogContent>
               </Dialog>
 
-              <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70">
+              {/* <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70">
                 <div className="flex items-center gap-3">
                   <Bell className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium">알림 설정</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
+              </button> */}
 
               <button
                 onClick={cycleTheme}
@@ -599,7 +599,10 @@ export default function ProfilePage() {
                 </div>
               </button>
 
-              <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70">
+              <button 
+                onClick={() => router.push("/settings")}
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
+              >
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium">개인정보 설정</span>

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, MoveUp, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import dayjs from "dayjs";
@@ -208,7 +208,7 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-4 w-4 ml-0.5" />
+                <MoveUp className="h-4 w-4 ml-0.5" />
               )}
             </button>
           </form>

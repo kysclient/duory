@@ -1,21 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { CreateMemoryModal } from "@/components/create-memory-modal";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCoupleMemories } from "@/lib/hooks/use-memories";
-import { Grid3x3, Calendar, MapPin } from "lucide-react";
+import { MemoryFeed } from "@/components/memory-feed";
+import { MemoryDetailModal } from "@/components/memory-detail-modal";
+import { useCoupleMemories, MemoryWithAuthor } from "@/lib/hooks/use-memories";
+import { useAuth } from "@/lib/auth-context";
+import { LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import PullToRefresh from "react-simple-pull-to-refresh";
+
+type ViewMode = "feed" | "gallery";
 
 export default function MemoriesPage() {
-  const { memories, loading } = useCoupleMemories();
+  const { user } = useAuth();
+  const [viewMode, setViewMode] = useState<ViewMode>("gallery");
+  const { memories, loading, toggleLike, refresh } = useCoupleMemories();
+  const [selectedMemory, setSelectedMemory] = useState<MemoryWithAuthor | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const handleMemoryClick = (memory: MemoryWithAuthor) => {
+    setSelectedMemory(memory);
+    setIsDetailOpen(true);
+  };
+
+  const handleLike = (memoryId: string) => {
+    toggleLike(memoryId);
+  };
+
+  const handleRefresh = async () => {
+    await refresh();
+    return new Promise((resolve) => setTimeout(resolve, 500));
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <main className="mx-auto max-w-lg">
         {/* 헤더 */}
-        <div className="sticky top-0 z-30 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-lg">
-          <div className="mb-3 flex items-center justify-between">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-lg">
+          <div className="flex h-14 items-center justify-between px-4">
             <div className="flex flex-row items-center">
               <Image
                 src="/logo_v1.png"
@@ -25,67 +50,128 @@ export default function MemoriesPage() {
                 className="w-9 h-auto"
                 priority
               />
-              <span className="font-semibold translate -translate-y-0.1">Duory</span>
+              <span className="font-semibold translate -translate-y-0.1">
+                Memories
+              </span>
+            </div>
+
+            {/* 뷰 모드 토글 */}
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+              <button
+                onClick={() => setViewMode("feed")}
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  viewMode === "feed"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("gallery")}
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  viewMode === "gallery"
+                    ? "bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
             </div>
           </div>
+        </header>
 
-          {/* 필터 버튼 */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background">
-              <Grid3x3 className="h-3.5 w-3.5" />
-              전체
-            </button>
-            <button className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent">
-              <Calendar className="h-3.5 w-3.5" />
-              날짜별
-            </button>
-            <button className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent">
-              <MapPin className="h-3.5 w-3.5" />
-              장소별
-            </button>
-          </div>
-        </div>
-
-        {/* 그리드 앨범 */}
-        <div className="grid grid-cols-3">
-          {loading ? (
-            // 로딩 스켈레톤 (3x7 = 21개)
-            Array.from({ length: 21 }).map((_, i) => (
-              <Skeleton 
-                key={i} 
-                className="aspect-square border-[0.5px] border-border/50 rounded-none"
-              />
-            ))
-          ) : memories.length === 0 ? (
-            // 빈 상태
-            <div className="col-span-3 flex h-60 flex-col items-center justify-center gap-3 text-center text-muted-foreground">
-              <Image src="/heart.png" alt="Empty" width={60} height={60} className="opacity-20 grayscale" />
-              <p>아직 추억이 없어요.<br />첫 추억을 만들어보세요!</p>
+        {/* 컨텐츠 with Pull-to-Refresh */}
+        <PullToRefresh
+          onRefresh={handleRefresh}
+          pullingContent=""
+          refreshingContent={
+            <div className="flex justify-center py-4">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
-          ) : (
-            // 실제 데이터
-            memories.map((memory) => {
-              const thumbnailImage = memory.images?.[0] || "/heart.png";
-              return (
-                <button
-                  key={memory.id}
-                  className="relative aspect-square overflow-hidden border-[0.5px] border-border/50 bg-muted transition-all hover:opacity-80 active:opacity-60"
-                >
-                  <Image
-                    src={thumbnailImage}
-                    alt="memory"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 33vw, 20vw"
-                  />
-                </button>
-              );
-            })
-          )}
-        </div>
+          }
+        >
+          <div>
+            {viewMode === "feed" ? (
+              <MemoryFeed />
+            ) : (
+              <div className="p-1">
+                {loading ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square animate-pulse bg-muted"
+                      />
+                    ))}
+                  </div>
+                ) : memories.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="mb-4 rounded-full bg-muted p-6">
+                      <LayoutGrid className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold">추억이 없습니다</h3>
+                    <p className="text-sm text-muted-foreground">
+                      특별한 순간을 기록해보세요
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1">
+                    {memories.map((memory) => {
+                      const thumbnail = memory.images?.[0];
+                      return (
+                        <button
+                          key={memory.id}
+                          onClick={() => handleMemoryClick(memory)}
+                          className="group relative aspect-square overflow-hidden bg-muted transition-opacity hover:opacity-90"
+                        >
+                          {thumbnail ? (
+                            <Image
+                              src={thumbnail}
+                              alt="추억"
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 33vw, 170px"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-muted p-3">
+                              <p className="line-clamp-4 text-xs text-muted-foreground">
+                                {memory.content}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* 다중 이미지 인디케이터 */}
+                          {memory.images && memory.images.length > 1 && (
+                            <div className="absolute right-2 top-2">
+                              <LayoutGrid className="h-4 w-4 text-white drop-shadow-lg" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </PullToRefresh>
+
+        {/* FAB - 추억 작성 버튼 */}
+        <CreateMemoryModal />
       </main>
 
-      <CreateMemoryModal />
+      {/* 메모리 디테일 모달 */}
+      <MemoryDetailModal
+        memory={selectedMemory}
+        isOpen={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        onLike={handleLike}
+        currentUserId={user?.id}
+      />
+
       <BottomNav />
     </div>
   );

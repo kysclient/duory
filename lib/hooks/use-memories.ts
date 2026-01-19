@@ -11,7 +11,12 @@ export interface MemoryWithAuthor extends Memory {
   is_liked?: boolean;
 }
 
-export function useCoupleMemories() {
+interface UseMemoriesOptions {
+  publicOnly?: boolean; // 전체 공개 메모리만 가져올지 여부
+}
+
+export function useCoupleMemories(options: UseMemoriesOptions = {}) {
+  const { publicOnly = false } = options;
   const { user } = useAuth();
   const [memories, setMemories] = useState<MemoryWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +24,8 @@ export function useCoupleMemories() {
 
   // isBackground: true면 로딩 상태를 변경하지 않음 (깜빡임 방지)
   const fetchMemories = useCallback(async (isBackground = false) => {
-    if (!user?.couple_id) {
+    // publicOnly일 때는 couple_id가 없어도 조회 가능
+    if (!publicOnly && !user?.couple_id) {
       setLoading(false);
       return;
     }
@@ -31,7 +37,7 @@ export function useCoupleMemories() {
 
     try {
       // 1. 메모리 데이터 조회
-      const { data: memoriesData, error: memoriesError } = await supabase
+      let query = supabase
         .from("memories")
         .select(`
           *,
@@ -39,8 +45,18 @@ export function useCoupleMemories() {
             nickname,
             avatar_url
           )
-        `)
-        .eq("couple_id", user.couple_id)
+        `);
+
+      // 필터 적용
+      if (publicOnly) {
+        // 전체 공개 메모리만
+        query = query.eq("is_public", true);
+      } else if (user?.couple_id) {
+        // 커플 메모리만 (우리끼리만 + 전체 공개)
+        query = query.eq("couple_id", user.couple_id);
+      }
+
+      const { data: memoriesData, error: memoriesError } = await query
         .order("memory_date", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -78,7 +94,7 @@ export function useCoupleMemories() {
         setLoading(false);
       }
     }
-  }, [user?.couple_id, user?.id]);
+  }, [user?.couple_id, user?.id, publicOnly]);
 
   useEffect(() => {
     fetchMemories();
@@ -186,7 +202,7 @@ export function useCoupleMemories() {
     memories, 
     loading, 
     error, 
-    refresh: () => fetchMemories(true), // 수동 리프레시도 백그라운드로
+    refresh: () => fetchMemories(false), // Pull-to-refresh는 로딩 표시
     toggleLike,
     deleteMemory
   };
