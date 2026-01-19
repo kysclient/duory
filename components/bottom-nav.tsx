@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Images, PanelLeft, User, } from "lucide-react";
-import { HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon } from "./icons";
+import { HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon, MemoriesIcon, MemoriesFilledIcon, ProfileFilledIcon, ProfileIcon } from "./icons";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -22,8 +22,9 @@ const navItems: NavItem[] = [
     href: "/",
   },
   {
-    type: "lucide",
-    lucideIcon: PanelLeft,
+    type: "custom",
+    icon: MemoriesIcon,
+    iconFilled: MemoriesFilledIcon,
     href: "/memories",
   },
   {
@@ -33,8 +34,9 @@ const navItems: NavItem[] = [
     href: "/community",
   },
   {
-    type: "lucide",
-    lucideIcon: User,
+    type: "custom",
+    icon: ProfileIcon,
+    iconFilled: ProfileFilledIcon,
     href: "/profile",
   },
 ];

@@ -85,12 +85,15 @@ export function HeartIcon({ color = 'currentColor', size = DEFAULT_SIZE, classNa
   );
 }
 
+// Profile 아이콘 - Threads 스타일 (둥근 심플 디자인)
 export function ProfileFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
-      <circle cx="13" cy="7.25" r="4" stroke={color} strokeWidth={2.5} />
+      {/* 머리 - 완전히 채워진 원 */}
+      <circle cx="13" cy="8.5" r="4.5" fill={color} />
+      {/* 어깨/몸통 - 채워진 반원 형태 */}
       <path
-        d="M6.26678 23.75H19.744C21.603 23.75 22.5 23.2186 22.5 22.0673C22.5 19.3712 18.8038 15.75 13 15.75C7.19625 15.75 3.5 19.3712 3.5 22.0673C3.5 23.2186 4.39704 23.75 6.26678 23.75Z"
+        d="M 5 23 C 5 17.5 8.5 14.5 13 14.5 C 17.5 14.5 21 17.5 21 23 Z"
         fill={color}
       />
     </svg>
@@ -100,12 +103,68 @@ export function ProfileFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE,
 export function ProfileIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
-      <circle cx="13" cy="7.25" r="4" stroke={color} strokeWidth={2.5} />
+      {/* 머리 */}
+      <circle cx="13" cy="8.5" r="4.5" stroke={color} strokeWidth="2.5" fill="none" />
+      {/* 어깨/몸통 */}
       <path
-        d="M6.26678 23.75H19.744C21.603 23.75 22.5 23.2186 22.5 22.0673C22.5 19.3712 18.8038 15.75 13 15.75C7.19625 15.75 3.5 19.3712 3.5 22.0673C3.5 23.2186 4.39704 23.75 6.26678 23.75Z"
-        fill="none"
+        d="M 5 23 C 5 17.5 8.5 14.5 13 14.5 C 17.5 14.5 21 17.5 21 23"
         stroke={color}
-        strokeWidth={2.5}
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Memories 아이콘 - 둥근 편지 봉투 스타일 (Threads 메시지함 느낌)
+export function MemoriesIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      {/* 둥근 편지 봉투 바디 */}
+      <path
+        d="M 4 8 C 4 6.5 5 5.5 6.5 5.5 L 19.5 5.5 C 21 5.5 22 6.5 22 8 L 22 18 C 22 19.5 21 20.5 19.5 20.5 L 6.5 20.5 C 5 20.5 4 19.5 4 18 Z"
+        stroke={color}
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 편지 플랩 (부드러운 V자) */}
+      <path
+        d="M 4 8 Q 13 15 22 8"
+        stroke={color}
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function MemoriesFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      <defs>
+        <mask id="envelope-cutout-mask">
+          <rect width="26" height="26" fill="white"/>
+          {/* 플랩 부분을 검은색으로 그려서 마스크 아웃 (컷아웃) */}
+          <path
+            d="M 4 8 Q 13 15 22 8"
+            stroke="black"
+            strokeWidth="2.5"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </mask>
+      </defs>
+      {/* 채워진 봉투 (플랩 부분 컷아웃 적용) */}
+      <path
+        d="M 4 8 C 4 6.5 5 5.5 6.5 5.5 L 19.5 5.5 C 21 5.5 22 6.5 22 8 L 22 18 C 22 19.5 21 20.5 19.5 20.5 L 6.5 20.5 C 5 20.5 4 19.5 4 18 Z"
+        fill={color}
+        mask="url(#envelope-cutout-mask)"
       />
     </svg>
   );
