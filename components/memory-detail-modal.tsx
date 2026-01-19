@@ -102,9 +102,9 @@ export function MemoryDetailModal({
                       onClick={() => handleImageClick(index)}
                       className={cn(
                         "relative w-full overflow-hidden bg-muted transition-opacity hover:opacity-90",
-                        memory.images.length === 1
+                        memory?.images?.length === 1
                           ? "aspect-square max-h-[500px]"
-                          : memory.images.length === 3 && index === 0
+                          : memory?.images?.length === 3 && index === 0
                           ? "row-span-2 aspect-square"
                           : "aspect-square"
                       )}

@@ -66,7 +66,7 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
       const memoryIds = memoriesData?.map(m => m.id) || [];
       let likedMemoryIds = new Set<string>();
 
-      if (memoryIds.length > 0) {
+      if (memoryIds.length > 0 && user?.id) {
         const { data: likesData, error: likesError } = await supabase
           .from("memory_likes")
           .select("memory_id")
@@ -128,8 +128,8 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
   }, [fetchMemories, user?.couple_id]);
 
   // 좋아요 토글 함수
-  const toggleLike = async (memoryId: string, currentIsLiked: boolean) => {
-    if (!user) return;
+  const toggleLike = async (memoryId: string, currentIsLiked?: boolean) => {
+    if (!user?.id) return;
 
     const memory = memories.find(m => m.id === memoryId);
     const currentCount = memory?.likes_count || 0;
@@ -162,7 +162,7 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
 
   // 추억 삭제 함수
   const deleteMemory = async (memoryId: string) => {
-    if (!user) return false;
+    if (!user?.id) return false;
 
     try {
       // Optimistic Update - 즉시 UI에서 제거

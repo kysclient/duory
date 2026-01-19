@@ -121,7 +121,7 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
     // refresh(); 
   };
 
-  const handleLikeClick = (id: string, isLiked: boolean) => {
+  const handleLikeClick = (id: string, isLiked?: boolean) => {
     toggleLike(id, isLiked);
   };
 
