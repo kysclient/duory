@@ -17,6 +17,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // Safe Area 지원 (notch, home indicator 등)
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FF5A8E" },
     { media: "(prefers-color-scheme: dark)", color: "#FF6B9D" },

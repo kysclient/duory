@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowRight, Copy, Check } from "lucide-react";
+import { ArrowRight, Copy, Check, Home } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import {
   createInviteCode,
@@ -104,7 +104,7 @@ export default function ConnectPage() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         {/* 헤더 */}
-        <div className="flex items-center p-4">
+        <div className="flex items-center justify-between p-4">
           <div className="flex flex-row items-center">
             <Image
               src="/logo_v1.png"
@@ -115,6 +115,13 @@ export default function ConnectPage() {
             />
             <span className="text-base font-semibold">Duory</span>
           </div>
+          <button
+            onClick={() => router.push("/")}
+            className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted active:scale-95"
+          >
+            <Home className="h-4 w-4" />
+            홈으로
+          </button>
         </div>
 
         {/* 컨텐츠 */}

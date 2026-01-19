@@ -43,7 +43,12 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border rounded-t-xl bg-background">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border rounded-t-xl bg-background"
+      style={{
+        paddingBottom: 'max(env(safe-area-inset-bottom), 0px)',
+      }}
+    >
       <div className="mx-auto max-w-lg">
         <div className="grid grid-cols-4">
           

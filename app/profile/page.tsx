@@ -437,7 +437,10 @@ export default function ProfilePage() {
             <div className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
               기념일
             </div>
-            <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70">
+            <button 
+              onClick={() => router.push("/anniversaries")}
+              className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
                   <CalendarIcon className="h-5 w-5" />

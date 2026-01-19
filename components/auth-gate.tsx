@@ -73,7 +73,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     if (!user.couple_id) {
-      if (pathname !== "/connect") {
+      // 커플이 없어도 접근 가능한 페이지들
+      const allowedWithoutCouple = ["/connect", "/couple", "/profile", "/", "/memories", "/community"];
+      if (!allowedWithoutCouple.includes(pathname)) {
         router.replace("/connect");
       }
       return;

@@ -105,9 +105,28 @@ export default function CouplePage() {
     }
   };
 
-  // 커플 끊기
+  // 커플 끊기 (커플이 없으면 토스트 띄우기)
+  const handleBreakupClick = () => {
+    if (!couple || !user?.couple_id) {
+      toast.error("연결된 커플이 없습니다", {
+        description: "커플을 먼저 연결해주세요."
+      });
+      return;
+    }
+    setIsBreakupOpen(true);
+  };
+
+  // 커플 끊기 실행
   const handleBreakup = async () => {
-    if (!user?.couple_id) return;
+    // couple 객체와 couple_id 모두 체크
+    if (!couple || !user?.couple_id || !couple.user1_id || !couple.user2_id) {
+      toast.error("커플 정보를 찾을 수 없습니다", {
+        description: "페이지를 새로고침해주세요."
+      });
+      setIsBreakupOpen(false);
+      return;
+    }
+    
     setIsProcessing(true);
 
     try {
@@ -115,14 +134,14 @@ export default function CouplePage() {
       const { error: user1Error } = await supabase
         .from("users")
         .update({ couple_id: null })
-        .eq("id", couple?.user1_id);
+        .eq("id", couple.user1_id);
 
       if (user1Error) throw user1Error;
 
       const { error: user2Error } = await supabase
         .from("users")
         .update({ couple_id: null })
-        .eq("id", couple?.user2_id);
+        .eq("id", couple.user2_id);
 
       if (user2Error) throw user2Error;
 
@@ -134,6 +153,11 @@ export default function CouplePage() {
 
       if (deleteError) throw deleteError;
 
+      // 성공 토스트
+      toast.success("커플 연결이 해제되었습니다", {
+        description: "다시 연결하려면 초대코드를 사용하세요."
+      });
+
       // 로그아웃 및 환영 페이지로 이동
       await signOut();
       router.replace("/welcome");
@@ -143,6 +167,7 @@ export default function CouplePage() {
         description: "다시 시도해주세요."
       });
       setIsProcessing(false);
+      setIsBreakupOpen(false);
     }
   };
 
@@ -371,21 +396,19 @@ export default function CouplePage() {
         </div>
 
         {/* 위험 영역 */}
-        {couple && (
-          <div className="p-6">
-            <h3 className="mb-4 text-sm font-semibold text-muted-foreground">
-              위험 영역
-            </h3>
-            
-            <Dialog open={isBreakupOpen} onOpenChange={setIsBreakupOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full text-destructive hover:bg-destructive/10"
-                >
-                  커플 끊기
-                </Button>
-              </DialogTrigger>
+        <div className="p-6">
+          <h3 className="mb-4 text-sm font-semibold text-muted-foreground">
+            위험 영역
+          </h3>
+          
+          <Dialog open={isBreakupOpen} onOpenChange={setIsBreakupOpen}>
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:bg-destructive/10"
+              onClick={handleBreakupClick}
+            >
+              커플 끊기
+            </Button>
               
               <DialogContent className="sm:max-w-md">
                 <DialogHeader className="space-y-3">
@@ -442,8 +465,7 @@ export default function CouplePage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        )}
+        </div>
       </main>
 
       <BottomNav />

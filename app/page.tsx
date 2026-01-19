@@ -5,11 +5,13 @@ import { MemoryFeed } from "@/components/memory-feed";
 import { BottomNav } from "@/components/bottom-nav";
 import { CreateMemoryModal } from "@/components/create-memory-modal";
 import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
 
 export default function Home() {
   const { user, couple, daysCount } = useAuth();
+  const router = useRouter();
   
   // 커플 연결 완료 → 메인 페이지 표시
   const isConnected = !!couple;
@@ -74,7 +76,10 @@ export default function Home() {
           <p className="mb-8 text-muted-foreground">
             특별한 추억을 기록하고 공유할 수 있어요
           </p>
-          <button className="rounded-xl bg-primary px-8 py-4 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 active:scale-95">
+          <button 
+            onClick={() => router.push("/connect")}
+            className="rounded-xl bg-primary px-8 py-4 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 active:scale-95"
+          >
             커플 연결하기
           </button>
         </main>

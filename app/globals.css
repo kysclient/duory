@@ -132,11 +132,15 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "ss01", "ss02", "ss03";
+    /* PWA Safe Area 지원 */
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
   html {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    /* PWA viewport 설정 */
+    height: 100%;
   }
 
   /* 스크롤바 숨기기 */
