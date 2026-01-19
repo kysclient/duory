@@ -144,11 +144,50 @@ export function useCoupleMemories() {
     }
   };
 
+  // 추억 삭제 함수
+  const deleteMemory = async (memoryId: string) => {
+    if (!user) return false;
+
+    try {
+      // Optimistic Update - 즉시 UI에서 제거
+      setMemories(prev => prev.filter(m => m.id !== memoryId));
+
+      // Supabase Storage에서 이미지 삭제
+      const memory = memories.find(m => m.id === memoryId);
+      if (memory?.images && memory.images.length > 0) {
+        for (const imageUrl of memory.images) {
+          // URL에서 storage 경로 추출
+          const pathMatch = imageUrl.match(/\/duory-images\/(.+)$/);
+          if (pathMatch) {
+            const filePath = pathMatch[1];
+            await supabase.storage.from("duory-images").remove([filePath]);
+          }
+        }
+      }
+
+      // DB에서 추억 삭제 (CASCADE로 댓글, 좋아요도 자동 삭제됨)
+      const { error: deleteError } = await supabase
+        .from("memories")
+        .delete()
+        .eq("id", memoryId)
+        .eq("created_by", user.id); // 본인이 작성한 것만 삭제 가능
+
+      if (deleteError) throw deleteError;
+
+      return true;
+    } catch (error) {
+      console.error("추억 삭제 실패:", error);
+      fetchMemories(true); // 실패 시 데이터 다시 로드
+      return false;
+    }
+  };
+
   return { 
     memories, 
     loading, 
     error, 
     refresh: () => fetchMemories(true), // 수동 리프레시도 백그라운드로
-    toggleLike
+    toggleLike,
+    deleteMemory
   };
 }

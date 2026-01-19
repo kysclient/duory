@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { AuthGate } from "@/components/auth-gate";
+import { RegisterServiceWorker } from "@/components/register-sw";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -26,6 +28,12 @@ export const metadata: Metadata = {
   description: "연인과 함께하는 특별한 추억 공간, Duory",
   keywords: ["커플", "추억", "데이트", "연애", "커뮤니티"],
   authors: [{ name: "Duory" }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Duory",
+  },
   icons: {
     icon: [{ url: "/logo_512.png", sizes: "512x512", type: "image/png" }],
     apple: [{ url: "/logo_180.png", sizes: "180x180", type: "image/png" }],
@@ -54,6 +62,7 @@ export default function RootLayout({
         className={`${geistMono.variable} antialiased no-scrollbar`}
         style={{ fontFamily: "var(--font-pretendard)" }}
       >
+        <RegisterServiceWorker />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -64,6 +73,7 @@ export default function RootLayout({
             <AuthGate>{children}</AuthGate>
           </AuthProvider>
         </ThemeProvider>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

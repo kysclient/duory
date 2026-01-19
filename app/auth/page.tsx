@@ -17,6 +17,9 @@ export default function AuthPage() {
 
     try {
       const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      console.log("🔗 Redirect URL:", redirectUrl);
+      console.log("🔗 Full redirect:", `${redirectUrl}/onboarding`);
+      
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {

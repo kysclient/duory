@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Check,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { createInviteCode, getActiveInviteCode } from "@/lib/api/invite-codes";
@@ -91,9 +92,14 @@ export default function CouplePage() {
       const newCode = await createInviteCode(user.id);
       setInviteCode(newCode);
       setIsRegenerateOpen(false);
+      toast.success("초대코드가 재발급되었습니다", {
+        description: "새로운 코드를 공유해주세요."
+      });
     } catch (error) {
       console.error("초대코드 재발급 실패:", error);
-      alert("초대코드 재발급에 실패했습니다.");
+      toast.error("초대코드 재발급 실패", {
+        description: "다시 시도해주세요."
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -133,7 +139,9 @@ export default function CouplePage() {
       router.replace("/welcome");
     } catch (error) {
       console.error("커플 끊기 실패:", error);
-      alert("커플 끊기에 실패했습니다.");
+      toast.error("커플 끊기 실패", {
+        description: "다시 시도해주세요."
+      });
       setIsProcessing(false);
     }
   };

@@ -4,12 +4,15 @@ import { Plus } from "lucide-react";
 import { MemoryFeed } from "@/components/memory-feed";
 import { BottomNav } from "@/components/bottom-nav";
 import { CreateMemoryModal } from "@/components/create-memory-modal";
+import { useAuth } from "@/lib/auth-context";
 import { useEffect } from "react";
 import Image from "next/image";
 
 export default function Home() {
+  const { user, couple, daysCount } = useAuth();
+  
   // 커플 연결 완료 → 메인 페이지 표시
-  const isConnected = true;
+  const isConnected = !!couple;
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,15 +34,15 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-sm font-medium text-muted-foreground">
-                  D+156
+                  {daysCount !== null ? `D+${daysCount}` : "D+0"}
                 </div>
                 <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                   <Image
-                    src="/heart.png"
+                    src={user?.avatar_url || "/heart.png"}
                     alt="profile"
-                    width={20}
-                    height={20}
-                    className="h-5 w-5"
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               </div>

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, X } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -115,7 +116,9 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
 
     } catch (error) {
       console.error("댓글 작성 실패:", error);
-      alert("댓글을 작성하지 못했습니다.");
+      toast.error("댓글 작성 실패", {
+        description: "다시 시도해주세요."
+      });
     } finally {
       setSubmitting(false);
     }

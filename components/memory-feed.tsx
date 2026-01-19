@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, MessageCircle, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -8,6 +8,19 @@ import { useCoupleMemories } from "@/lib/hooks/use-memories";
 import { CommentSheet } from "@/components/comment-sheet";
 import { MemoryFeedSkeleton } from "@/components/memory-feed-skeleton";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/ko";
@@ -16,7 +29,8 @@ dayjs.extend(relativeTime);
 dayjs.locale("ko");
 
 export function MemoryFeed() {
-  const { memories, loading, error, refresh, toggleLike } = useCoupleMemories();
+  const { user } = useAuth();
+  const { memories, loading, error, refresh, toggleLike, deleteMemory } = useCoupleMemories();
   
   // 댓글 시트 상태 관리
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null);
@@ -26,6 +40,13 @@ export function MemoryFeed() {
   const [activeImages, setActiveImages] = useState<string[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+
+  // Popover 상태 관리
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  
+  // AlertDialog 상태 관리
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
 
   const handleCommentClick = (id: string) => {
     setActiveMemoryId(id);
@@ -45,6 +66,29 @@ export function MemoryFeed() {
     setActiveImages(images);
     setActiveImageIndex(index);
     setIsImageViewerOpen(true);
+  };
+
+  const handleDeleteMemory = async (memoryId: string) => {
+    setMemoryToDelete(memoryId);
+    setDeleteDialogOpen(true);
+    setOpenPopoverId(null); // Popover 닫기
+  };
+
+  const confirmDelete = async () => {
+    if (!memoryToDelete) return;
+
+    const success = await deleteMemory(memoryToDelete);
+    if (success) {
+      toast.success("추억이 삭제되었습니다", {
+        description: "삭제된 추억은 복구할 수 없습니다."
+      });
+      setDeleteDialogOpen(false);
+      setMemoryToDelete(null);
+    } else {
+      toast.error("삭제 실패", {
+        description: "다시 시도해주세요."
+      });
+    }
   };
 
   if (loading) {
@@ -100,9 +144,31 @@ export function MemoryFeed() {
                   </div>
                 </div>
               </div>
-              <button className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
+              
+              {/* More 버튼 with Popover */}
+              <Popover 
+                open={openPopoverId === memory.id} 
+                onOpenChange={(open) => setOpenPopoverId(open ? memory.id : null)}
+              >
+                <PopoverTrigger asChild>
+                  <button className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </button>
+                </PopoverTrigger>
+                
+                {/* 본인이 작성한 추억만 삭제 가능 */}
+                {user?.id === memory.created_by && (
+                  <PopoverContent align="end" className="w-40 p-0">
+                    <button
+                      onClick={() => handleDeleteMemory(memory.id)}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>삭제하기</span>
+                    </button>
+                  </PopoverContent>
+                )}
+              </Popover>
             </div>
 
             {/* 내용 */}
@@ -194,6 +260,24 @@ export function MemoryFeed() {
         isOpen={isImageViewerOpen}
         onOpenChange={setIsImageViewerOpen}
       />
+
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>추억을 삭제하시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              삭제된 추억은 복구할 수 없습니다. 정말로 삭제하시겠어요?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

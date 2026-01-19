@@ -18,6 +18,7 @@ import {
   Plus,
   ChevronDown
 } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -47,13 +48,17 @@ export function CreateMemoryModal() {
       const totalImages = selectedImages.length + files.length;
       
       if (totalImages > 4) {
-        alert("사진은 최대 4장까지 업로드할 수 있습니다.");
+        toast.error("사진 업로드 제한", {
+          description: "사진은 최대 4장까지 업로드할 수 있습니다."
+        });
         return;
       }
 
       for (const file of files) {
         if (file.size > 5 * 1024 * 1024) {
-          alert("각 이미지는 5MB를 초과할 수 없습니다.");
+          toast.error("파일 크기 초과", {
+            description: "각 이미지는 5MB를 초과할 수 없습니다."
+          });
           return;
         }
       }
@@ -131,7 +136,9 @@ export function CreateMemoryModal() {
       
     } catch (error) {
       console.error("추억 저장 실패:", error);
-      alert("문제가 발생했습니다. 다시 시도해주세요.");
+      toast.error("추억 저장 실패", {
+        description: "문제가 발생했습니다. 다시 시도해주세요."
+      });
     } finally {
       setLoading(false);
     }

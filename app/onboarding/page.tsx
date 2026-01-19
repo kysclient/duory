@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, User } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import { uploadToSupabase } from "@/lib/api/upload-supabase";
@@ -72,7 +73,9 @@ export default function OnboardingPage() {
       console.error("Error saving profile:", error);
       // AbortError는 무시 (페이지 이동으로 인한 정상적인 취소)
       if (error.name !== 'AbortError') {
-        alert("프로필 저장 중 오류가 발생했습니다");
+        toast.error("프로필 저장 실패", {
+          description: "프로필 저장 중 오류가 발생했습니다."
+        });
       }
     } finally {
       setUploading(false);

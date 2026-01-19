@@ -110,7 +110,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // coupleId 유효성 검사
       if (!coupleId || coupleId === 'null' || coupleId === 'undefined') {
-        console.log("⚠️ Invalid couple_id:", coupleId);
         setCouple(null);
         setPartner(null);
         setDaysCount(0);
@@ -124,24 +123,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", coupleId)
         .single();
 
-      if (coupleError) {
+      if (coupleError || !coupleData) {
+        setCouple(null);
+        setPartner(null);
+        setDaysCount(0);
         return;
       }
 
       setCouple(coupleData);
 
       // D-day 계산
-      const startDate = new Date(coupleData.start_date);
-      const today = new Date();
-      const diffTime = Math.abs(today.getTime() - startDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDaysCount(diffDays);
+      try {
+        const startDate = new Date(coupleData.start_date);
+        const today = new Date();
+        const diffTime = Math.abs(today.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        setDaysCount(diffDays);
+      } catch (e) {
+        setDaysCount(0);
+      }
 
       // 파트너 정보 가져오기
-      const partnerId =
+      let partnerId =
         coupleData.user1_id === userId
           ? coupleData.user2_id
           : coupleData.user1_id;
+
+      // 파트너 ID 정규화 (null, undefined, 빈 문자열 모두 null로 변환)
+      if (!partnerId || 
+          partnerId === 'null' || 
+          partnerId === 'undefined' || 
+          partnerId === '' ||
+          partnerId === null ||
+          partnerId === undefined) {
+        setPartner(null);
+        return;
+      }
+
+      // UUID 형식 검증 (추가 안전장치)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(partnerId)) {
+        setPartner(null);
+        return;
+      }
 
       const { data: partnerData, error: partnerError } = await supabase
         .from("users")
@@ -149,14 +173,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", partnerId)
         .single();
 
-      if (partnerError) {
-        console.error("파트너 데이터 조회 실패:", partnerError);
+      if (partnerError || !partnerData) {
+        // 에러 무시 - 파트너 매칭 대기 중
+        setPartner(null);
         return;
       }
 
       setPartner(partnerData);
     } catch (error) {
-      console.error("커플 데이터 로드 중 에러:", error);
+      // 모든 에러 무시 - 기본값 유지
+      setCouple(null);
+      setPartner(null);
+      setDaysCount(0);
     }
   };
 
