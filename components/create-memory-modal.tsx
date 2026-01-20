@@ -16,12 +16,14 @@ import {
   Globe, 
   Lock, 
   Plus,
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { LocationSearchModal, Location } from "@/components/location-search-modal";
 
 export function CreateMemoryModal() {
   const { user } = useAuth();
@@ -32,6 +34,8 @@ export function CreateMemoryModal() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [isLocationSearchOpen, setIsLocationSearchOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -112,6 +116,16 @@ export function CreateMemoryModal() {
         uploadedUrls.push(...urls);
       }
 
+      // 위치 데이터 준비
+      const locationData = selectedLocation ? {
+        name: selectedLocation.name,
+        address: selectedLocation.address,
+        roadAddress: selectedLocation.roadAddress,
+        category: selectedLocation.category,
+        lat: selectedLocation.lat,
+        lng: selectedLocation.lng,
+      } : null;
+
       const { error: insertError } = await supabase
         .from("memories")
         .insert({
@@ -121,6 +135,7 @@ export function CreateMemoryModal() {
           created_by: user.id,
           is_public: isPublic,
           memory_date: new Date().toISOString().split('T')[0], // 컬럼명 수정: date -> memory_date, 형식: YYYY-MM-DD
+          location_data: locationData, // 위치 데이터 추가
         });
 
       if (insertError) throw insertError;
@@ -131,6 +146,7 @@ export function CreateMemoryModal() {
       setSelectedImages([]);
       setPreviewUrls([]);
       setIsPublic(false);
+      setSelectedLocation(null);
       setIsOpen(false);
       router.refresh();
       
@@ -147,7 +163,8 @@ export function CreateMemoryModal() {
   if (!user?.couple_id) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <button 
           className="fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-95"
@@ -228,6 +245,32 @@ export function CreateMemoryModal() {
                 disabled={loading}
               />
 
+              {/* 위치 표시/추가 버튼 */}
+              <div className="mt-3">
+                {selectedLocation ? (
+                  <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium flex-1 truncate">
+                      {selectedLocation.name}
+                    </span>
+                    <button
+                      onClick={() => setSelectedLocation(null)}
+                      className="rounded-full p-0.5 hover:bg-muted transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsLocationSearchOpen(true)}
+                    className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>위치 추가</span>
+                  </button>
+                )}
+              </div>
+
               {/* 이미지 그리드 - 트위터 스타일 */}
               {previewUrls.length > 0 && (
                 <div className={cn(
@@ -290,5 +333,16 @@ export function CreateMemoryModal() {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* 위치 검색 모달 */}
+    <LocationSearchModal
+      isOpen={isLocationSearchOpen}
+      onClose={() => setIsLocationSearchOpen(false)}
+      onSelect={(location) => {
+        setSelectedLocation(location);
+        setIsLocationSearchOpen(false);
+      }}
+    />
+    </>
   );
 }

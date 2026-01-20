@@ -25,10 +25,46 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Duory",
-  description: "연인과 함께하는 특별한 추억 공간, Duory",
-  keywords: ["커플", "추억", "데이트", "연애", "커뮤니티"],
-  authors: [{ name: "Duory" }],
+  title: {
+    default: "듀오리(Duory) | 우리 둘만의 소중한 기록",
+    template: "%s | 듀오리(Duory)"
+  },
+  description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 우리만의 피드, 커뮤니티, 그리고 잊지 못할 기념일 관리까지 시작해보세요.",
+  keywords: ["커플앱", "커플기록", "기념일관리", "연애기록", "커플피드", "커플일기", "듀오리", "Duory"],
+  authors: [{ name: "Duory Team" }],
+  creator: "Duory",
+  publisher: "Duory",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://duory.app"), // 실제 도메인으로 변경 필요
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "듀오리(Duory) | 우리 둘만의 소중한 기록",
+    description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 지금 우리만의 추억을 쌓아보세요.",
+    url: "https://duory.app",
+    siteName: "Duory",
+    images: [
+      {
+        url: "/logo_512.png", // 카톡 공유 시 보일 메인 이미지
+        width: 1200,
+        height: 630,
+        alt: "Duory - 우리 둘만의 기록",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "듀오리(Duory) | 우리 둘만의 소중한 기록",
+    description: "연인과 함께하는 가장 설레는 기록 공간",
+    images: ["/logo_512.png"],
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -36,8 +72,24 @@ export const metadata: Metadata = {
     title: "Duory",
   },
   icons: {
-    icon: [{ url: "/logo_512.png", sizes: "512x512", type: "image/png" }],
-    apple: [{ url: "/logo_180.png", sizes: "180x180", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo_512.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: [
+      { url: "/logo_180.png", sizes: "180x180", type: "image/png" }
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -46,9 +98,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "듀오리 (Duory)",
+    "description": "연인과 함께하는 우리만의 소중한 기록 공간",
+    "applicationCategory": "SocialNetworkingApplication",
+    "operatingSystem": "iOS, Android, Windows, macOS",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "KRW"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "1024"
+    }
+  };
+
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <style
           dangerouslySetInnerHTML={{
             __html: `

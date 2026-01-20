@@ -11,6 +11,7 @@ import { LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import PullToRefresh from "react-simple-pull-to-refresh";
+import { MemoriesFilledIcon } from "@/components/icons";
 
 type ViewMode = "feed" | "gallery";
 
@@ -110,7 +111,8 @@ export default function MemoriesPage() {
                 ) : memories.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="mb-4 rounded-full bg-muted p-6">
-                      <LayoutGrid className="h-12 w-12 text-muted-foreground" />
+                      <MemoriesFilledIcon className="h-12 w-12 text-muted-foreground" />
+                      {/* <LayoutGrid className="h-12 w-12 text-muted-foreground" /> */}
                     </div>
                     <h3 className="mb-2 text-lg font-semibold">추억이 없습니다</h3>
                     <p className="text-sm text-muted-foreground">

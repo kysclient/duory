@@ -81,23 +81,24 @@ export default function Home() {
           <div className="mb-6 flex flex-row items-center">
             <Image
               src="/logo_v1.png"
-              alt="Duory"
+              alt="듀오리 로고"
               width={215}
               height={112}
               className="w-12 h-auto"
               priority
             />
-            <span className="text-3xl font-bold">Duory</span>
+            <h1 className="text-3xl font-bold">Duory</h1>
           </div>
-          <h2 className="mb-3 text-2xl font-bold">연인과 함께 시작하세요</h2>
-          <p className="mb-8 text-muted-foreground">
-            특별한 추억을 기록하고 공유할 수 있어요
+          <h2 className="mb-3 text-2xl font-bold tracking-tight">우리 둘만의 설레는 기록, 듀오리</h2>
+          <p className="mb-8 text-muted-foreground break-keep">
+            연인과 함께 소중한 추억을 사진으로 남기고,<br />
+            우리만의 기념일을 특별하게 관리해보세요.
           </p>
           <button 
             onClick={() => router.push("/connect")}
             className="rounded-xl bg-primary px-8 py-4 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 active:scale-95"
           >
-            커플 연결하기
+            지금 시작하기
           </button>
         </main>
       )}
