@@ -1,7 +1,10 @@
 // Service Worker for Duory PWA
-const CACHE_NAME = 'duory-cache-v1';
+// IMPORTANT: Change this version number on every deployment to force cache refresh
+const VERSION = 'v2.0.0';
+const CACHE_NAME = `duory-cache-${VERSION}`;
+const IMAGE_CACHE = `duory-images-${VERSION}`;
+
 const STATIC_ASSETS = [
-  '/',
   '/offline',
   '/logo_180.png',
   '/logo_512.png',
@@ -10,66 +13,108 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new service worker:', VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new service worker:', VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .filter((name) => name !== CACHE_NAME && name !== IMAGE_CACHE)
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
       );
     })
   );
+  // Take control of all pages immediately
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network First for Next.js build files, Cache First for images
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
   // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+  if (request.method !== 'GET') return;
 
   // Skip chrome extensions and other protocols
-  if (!event.request.url.startsWith('http')) return;
+  if (!url.protocol.startsWith('http')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+  // Skip API calls and Supabase auth
+  if (url.pathname.startsWith('/api') || url.hostname.includes('supabase.co/auth')) {
+    return;
+  }
 
-      return fetch(event.request)
+  // Network First for Next.js build files (CSS, JS chunks) - NEVER cache these
+  if (url.pathname.includes('/_next/static/')) {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
-          }
-
-          // Cache images from Supabase
-          if (event.request.url.includes('supabase.co/storage')) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-
+          // Always return fresh build files, never cache
           return response;
         })
         .catch(() => {
-          // Return offline page for navigation requests
-          if (event.request.mode === 'navigate') {
+          // If offline and navigation request, show offline page
+          if (request.mode === 'navigate') {
             return caches.match('/offline');
           }
-          return new Response('Offline', { status: 503 });
+          return new Response('Network error', { status: 503 });
+        })
+    );
+    return;
+  }
+
+  // Cache First for Supabase Storage images
+  if (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          return fetch(request).then((response) => {
+            if (response && response.status === 200) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          });
         });
+      })
+    );
+    return;
+  }
+
+  // Network First for HTML pages
+  if (request.mode === 'navigate' || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response)
+        .catch(() => caches.match('/offline'))
+    );
+    return;
+  }
+
+  // Cache First for static assets (logo, heart.png, etc.)
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(request);
     })
   );
 });
