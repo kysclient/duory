@@ -2,15 +2,15 @@
 
 import { BottomNav } from "@/components/bottom-nav";
 import { MemoryFeed } from "@/components/memory-feed";
-import { useCoupleMemories } from "@/lib/hooks/use-memories";
 import Image from "next/image";
 import PullToRefresh from "react-simple-pull-to-refresh";
+import { useState } from "react";
 
 export default function CommunityPage() {
-  const { refresh } = useCoupleMemories({ publicOnly: true });
+  const [feedRefreshToken, setFeedRefreshToken] = useState(0);
 
   const handleRefresh = async () => {
-    await refresh();
+    setFeedRefreshToken((prev) => prev + 1);
     return new Promise((resolve) => setTimeout(resolve, 500));
   };
 
@@ -29,7 +29,7 @@ export default function CommunityPage() {
                 className="w-9 h-auto"
                 priority
               />
-              <span className="font-semibold translate -translate-y-0.1">Duory</span>
+              <span className="font-semibold translate -translate-y-0.1">Community</span>
             </div>
           </div>
         </header>
@@ -45,7 +45,7 @@ export default function CommunityPage() {
           }
         >
           <div>
-            <MemoryFeed publicOnly={true} />
+            <MemoryFeed publicOnly={true} refreshToken={feedRefreshToken} />
           </div>
         </PullToRefresh>
       </main>

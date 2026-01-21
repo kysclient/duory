@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Heart, MessageCircle, MoreHorizontal, X } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Play, X } from "lucide-react";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { MemoryWithAuthor } from "@/lib/hooks/use-memories";
 import { CommentSheet } from "@/components/comment-sheet";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
+import { VideoViewerModal } from "@/components/video-viewer-modal";
 
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
@@ -33,6 +34,7 @@ export function MemoryDetailModal({
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isVideoViewerOpen, setIsVideoViewerOpen] = useState(false);
 
   if (!memory) return null;
 
@@ -44,6 +46,8 @@ export function MemoryDetailModal({
   const handleLikeClick = () => {
     onLike(memory.id);
   };
+
+  const videoUrl = memory.videos?.[0];
 
   return (
     <>
@@ -85,7 +89,7 @@ export function MemoryDetailModal({
               </div>
 
               {/* 이미지 그리드 */}
-              {memory.images && memory.images.length > 0 && (
+              {!videoUrl && memory.images && memory.images.length > 0 && (
                 <div
                   className={cn(
                     "grid gap-1 bg-muted",
@@ -119,6 +123,28 @@ export function MemoryDetailModal({
                     </button>
                   ))}
                 </div>
+              )}
+
+              {/* 영상 */}
+              {videoUrl && (
+                <button
+                  onClick={() => setIsVideoViewerOpen(true)}
+                  className="relative aspect-video w-full overflow-hidden bg-black"
+                >
+                  <video
+                    src={videoUrl}
+                    className="h-full w-full object-cover"
+                    muted
+                    playsInline
+                    loop
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">
+                      <Play className="h-6 w-6" />
+                    </div>
+                  </div>
+                </button>
               )}
 
               {/* 액션 버튼 */}
@@ -189,6 +215,15 @@ export function MemoryDetailModal({
           initialIndex={selectedImageIndex}
           isOpen={isImageViewerOpen}
           onOpenChange={setIsImageViewerOpen}
+        />
+      )}
+
+      {/* 영상 뷰어 */}
+      {videoUrl && (
+        <VideoViewerModal
+          src={videoUrl}
+          isOpen={isVideoViewerOpen}
+          onOpenChange={setIsVideoViewerOpen}
         />
       )}
     </>

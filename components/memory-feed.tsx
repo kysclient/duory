@@ -1,13 +1,14 @@
 "use client";
 
-import { Heart, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Heart, MessageCircle, MoreHorizontal, Trash2, Play } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useCoupleMemories, MemoryWithAuthor } from "@/lib/hooks/use-memories";
 import { CommentSheet } from "@/components/comment-sheet";
 import { MemoryFeedSkeleton } from "@/components/memory-feed-skeleton";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
+import { VideoViewerModal } from "@/components/video-viewer-modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/lib/supabase";
 import { 
@@ -29,6 +30,66 @@ import "dayjs/locale/ko";
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
 
+function VideoInlinePlayer({
+  src,
+  onOpen,
+}: {
+  src: string;
+  onOpen: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!video) return;
+          if (entry.isIntersecting) {
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+              playPromise.catch(() => undefined);
+            }
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+
+    observer.observe(video);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group relative aspect-video w-full overflow-hidden rounded-2xl bg-black"
+    >
+      <video
+        ref={videoRef}
+        src={src}
+        className="h-full w-full object-cover"
+        muted
+        playsInline
+        loop
+        preload="metadata"
+      />
+      <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">
+          <Play className="h-6 w-6" />
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export interface MemoryWithFirstComment extends MemoryWithAuthor {
   first_comment?: {
     id: string;
@@ -44,9 +105,10 @@ export interface MemoryWithFirstComment extends MemoryWithAuthor {
 
 interface MemoryFeedProps {
   publicOnly?: boolean; // 전체 공개 메모리만 표시할지 여부
+  refreshToken?: number;
 }
 
-export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
+export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps) {
   const { user } = useAuth();
   const { memories: rawMemories, loading, error, refresh, toggleLike, deleteMemory } = useCoupleMemories({ publicOnly });
   const [memories, setMemories] = useState<MemoryWithFirstComment[]>([]);
@@ -59,6 +121,8 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
   const [activeImages, setActiveImages] = useState<string[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [isVideoViewerOpen, setIsVideoViewerOpen] = useState(false);
 
   // Popover 상태 관리
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
@@ -111,6 +175,11 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
     fetchFirstComments();
   }, [rawMemories]);
 
+  useEffect(() => {
+    if (refreshToken === undefined) return;
+    refresh();
+  }, [refreshToken, refresh]);
+
   const handleCommentClick = (id: string) => {
     setActiveMemoryId(id);
     setIsCommentOpen(true);
@@ -129,6 +198,11 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
     setActiveImages(images);
     setActiveImageIndex(index);
     setIsImageViewerOpen(true);
+  };
+
+  const handleVideoClick = (videoUrl: string) => {
+    setActiveVideoUrl(videoUrl);
+    setIsVideoViewerOpen(true);
   };
 
   const handleDeleteMemory = async (memoryId: string) => {
@@ -180,6 +254,7 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
       {memories.map((memory) => {
         const isLiked = memory.is_liked || false;
         const images = memory.images || [];
+        const videos = memory.videos || [];
         const date = dayjs(memory.memory_date).format("YYYY년 M월 D일");
         const timeAgo = dayjs(memory.created_at).fromNow();
 
@@ -243,8 +318,18 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
               </div>
             )}
 
+            {/* 영상 */}
+            {videos.length > 0 && (
+              <div className="px-4 pb-3">
+                <VideoInlinePlayer
+                  src={videos[0]}
+                  onOpen={() => handleVideoClick(videos[0])}
+                />
+              </div>
+            )}
+
             {/* 이미지 그리드 */}
-            {images.length > 0 && (
+            {videos.length === 0 && images.length > 0 && (
               <div className={cn(
                 "overflow-hidden bg-muted",
                 images.length === 1 ? "aspect-square" : 
@@ -367,6 +452,13 @@ export function MemoryFeed({ publicOnly = false }: MemoryFeedProps) {
         initialIndex={activeImageIndex}
         isOpen={isImageViewerOpen}
         onOpenChange={setIsImageViewerOpen}
+      />
+
+      {/* 영상 뷰어 */}
+      <VideoViewerModal
+        src={activeVideoUrl}
+        isOpen={isVideoViewerOpen}
+        onOpenChange={setIsVideoViewerOpen}
       />
 
       {/* 삭제 확인 다이얼로그 */}

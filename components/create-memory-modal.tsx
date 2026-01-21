@@ -11,32 +11,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   Image as ImageIcon, 
+  Video,
   X, 
   Loader2, 
   Globe, 
   Lock, 
   Plus,
   ChevronDown,
-  MapPin
+  MapPin,
+  Feather
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LocationSearchModal, Location } from "@/components/location-search-modal";
 
-export function CreateMemoryModal() {
+interface CreateMemoryModalProps {
+  onCreated?: () => void;
+}
+
+export function CreateMemoryModal({ onCreated }: CreateMemoryModalProps) {
   const { user } = useAuth();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isLocationSearchOpen, setIsLocationSearchOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -48,6 +55,13 @@ export function CreateMemoryModal() {
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      if (selectedVideo) {
+        toast.error("영상은 사진과 함께 올릴 수 없습니다", {
+          description: "영상이 있으면 사진은 추가할 수 없어요."
+        });
+        return;
+      }
+
       const files = Array.from(e.target.files);
       const totalImages = selectedImages.length + files.length;
       
@@ -77,20 +91,76 @@ export function CreateMemoryModal() {
     }
   };
 
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (selectedImages.length > 0) {
+      toast.error("영상은 사진과 함께 올릴 수 없습니다", {
+        description: "사진이 있으면 영상은 추가할 수 없어요."
+      });
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+      return;
+    }
+
+    const allowedTypes = ["video/mp4", "video/webm", "video/quicktime"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("지원하지 않는 영상 형식", {
+        description: "MP4, WebM, MOV 형식만 업로드할 수 있습니다."
+      });
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+      return;
+    }
+
+    const maxVideoSizeMb = 50;
+    if (file.size > maxVideoSizeMb * 1024 * 1024) {
+      toast.error("영상 파일 크기 초과", {
+        description: `영상은 최대 ${maxVideoSizeMb}MB까지 업로드할 수 있습니다.`
+      });
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+
+    setSelectedVideo(file);
+    setVideoPreviewUrl(URL.createObjectURL(file));
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  };
+
   const removeImage = (index: number) => {
     URL.revokeObjectURL(previewUrls[index]);
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
+  const removeVideo = () => {
+    if (videoPreviewUrl) {
+      URL.revokeObjectURL(videoPreviewUrl);
+    }
+    setSelectedVideo(null);
+    setVideoPreviewUrl(null);
+  };
+
   const handleSubmit = async () => {
-    if (!content.trim() && selectedImages.length === 0) return;
+    if (!content.trim() && selectedImages.length === 0 && !selectedVideo) return;
     if (!user || !user.couple_id) return;
 
     setLoading(true);
 
     try {
       const uploadedUrls: string[] = [];
+      const uploadedVideoUrls: string[] = [];
 
       // 병렬 업로드 처리
       if (selectedImages.length > 0) {
@@ -116,6 +186,24 @@ export function CreateMemoryModal() {
         uploadedUrls.push(...urls);
       }
 
+      if (selectedVideo) {
+        const fileExtension = selectedVideo.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+        const filePath = `memories/${user.couple_id}/videos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("duory-images")
+          .upload(filePath, selectedVideo);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("duory-images")
+          .getPublicUrl(filePath);
+
+        uploadedVideoUrls.push(publicUrl);
+      }
+
       // 위치 데이터 준비
       const locationData = selectedLocation ? {
         name: selectedLocation.name,
@@ -131,6 +219,7 @@ export function CreateMemoryModal() {
         .insert({
           content,
           images: uploadedUrls, // 컬럼명 수정: image_urls -> images
+          videos: uploadedVideoUrls,
           couple_id: user.couple_id,
           created_by: user.id,
           is_public: isPublic,
@@ -140,20 +229,30 @@ export function CreateMemoryModal() {
 
       if (insertError) throw insertError;
 
+      toast.success("추억이 등록되었습니다", {
+        description: "피드에 바로 반영됐어요."
+      });
+
       // 초기화
       setContent("");
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       setSelectedImages([]);
       setPreviewUrls([]);
+      removeVideo();
       setIsPublic(false);
       setSelectedLocation(null);
       setIsOpen(false);
-      router.refresh();
+      onCreated?.();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("추억 저장 실패:", error);
+      const message =
+        error?.message ||
+        error?.details ||
+        error?.error_description ||
+        "문제가 발생했습니다. 다시 시도해주세요.";
       toast.error("추억 저장 실패", {
-        description: "문제가 발생했습니다. 다시 시도해주세요."
+        description: message
       });
     } finally {
       setLoading(false);
@@ -166,15 +265,15 @@ export function CreateMemoryModal() {
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button 
-          className="fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 hover:shadow-xl active:scale-95"
+        <button
+          className="fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-linear-to-br from-[#FFD6DF] via-[#E9A2B3] to-[#B86E81] text-white shadow-[0_14px_36px_rgba(184,110,129,0.38)] transition-all hover:scale-105 hover:shadow-[0_18px_44px_rgba(184,110,129,0.48)] active:scale-95"
           style={{
             bottom: 'calc(5rem + max(env(safe-area-inset-bottom), 0px))',
             right: '1.5rem'
           }}
           aria-label="추억 작성하기"
         >
-          <Plus className="h-7 w-7" strokeWidth={2.5} />
+         <Feather className="w-7 h-7 text-white" />
         </button>
       </DialogTrigger>
       
@@ -303,11 +402,32 @@ export function CreateMemoryModal() {
                   ))}
                 </div>
               )}
+
+              {/* 영상 미리보기 */}
+              {videoPreviewUrl && (
+                <div className="mt-3 overflow-hidden rounded-2xl border bg-muted">
+                  <div className="relative aspect-video bg-black">
+                    <video
+                      src={videoPreviewUrl}
+                      className="h-full w-full object-contain"
+                      muted
+                      playsInline
+                      controls
+                    />
+                    <button
+                      onClick={removeVideo}
+                      className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-105 hover:bg-black/70"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="border-t p-3 sm:rounded-b-xl">
+        <div className="border-t p-3 sm:rounded-b-xl pb-6">
           <div className="flex items-center gap-4 px-2">
             <input
               type="file"
@@ -316,18 +436,50 @@ export function CreateMemoryModal() {
               ref={fileInputRef}
               className="hidden"
               onChange={handleImageSelect}
-              disabled={loading || selectedImages.length >= 4}
+              disabled={loading || selectedImages.length >= 4 || !!selectedVideo}
             />
             <button
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "rounded-full p-2 text-primary transition-colors hover:bg-primary/10 active:scale-95",
-                selectedImages.length >= 4 && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                (selectedImages.length >= 4 || !!selectedVideo) && "opacity-50 cursor-not-allowed hover:bg-transparent"
               )}
-              title={selectedImages.length >= 4 ? "최대 4장까지 가능합니다" : "사진 추가"}
-              disabled={loading || selectedImages.length >= 4}
+              title={
+                selectedVideo
+                  ? "영상이 있으면 사진을 추가할 수 없습니다"
+                  : selectedImages.length >= 4
+                    ? "최대 4장까지 가능합니다"
+                    : "사진 추가"
+              }
+              disabled={loading || selectedImages.length >= 4 || !!selectedVideo}
             >
               <ImageIcon className="h-6 w-6" />
+            </button>
+
+            <input
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              ref={videoInputRef}
+              className="hidden"
+              onChange={handleVideoSelect}
+              disabled={loading || !!selectedVideo || selectedImages.length > 0}
+            />
+            <button
+              onClick={() => videoInputRef.current?.click()}
+              className={cn(
+                "rounded-full p-2 text-primary transition-colors hover:bg-primary/10 active:scale-95",
+                (selectedVideo || selectedImages.length > 0) && "opacity-50 cursor-not-allowed hover:bg-transparent"
+              )}
+              title={
+                selectedImages.length > 0
+                  ? "사진이 있으면 영상을 추가할 수 없습니다"
+                  : selectedVideo
+                    ? "이미 영상이 추가되어 있습니다"
+                    : "영상 추가"
+              }
+              disabled={loading || !!selectedVideo || selectedImages.length > 0}
+            >
+              <Video className="h-6 w-6" />
             </button>
           </div>
         </div>

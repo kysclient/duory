@@ -85,6 +85,31 @@ export function HeartIcon({ color = 'currentColor', size = DEFAULT_SIZE, classNa
   );
 }
 
+export function CommunityFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      <path
+        d="M7 4C5.067 4 3.5 5.567 3.5 7.5V15.5C3.5 17.433 5.067 19 7 19H9.75V22C9.75 22.276 9.97386 22.5 10.25 22.5C10.3826 22.5 10.5098 22.4473 10.6036 22.3536L13.9571 19H19C20.933 19 22.5 17.433 22.5 15.5V7.5C22.5 5.567 20.933 4 19 4H7Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+export function CommunityIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      <path
+        d="M7 4C5.067 4 3.5 5.567 3.5 7.5V15.5C3.5 17.433 5.067 19 7 19H9.75V22C9.75 22.276 9.97386 22.5 10.25 22.5C10.3826 22.5 10.5098 22.4473 10.6036 22.3536L13.9571 19H19C20.933 19 22.5 17.433 22.5 15.5V7.5C22.5 5.567 20.933 4 19 4H7Z"
+        fill="none"
+        stroke={color}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // Profile 아이콘 - Threads 스타일 (둥근 심플 디자인)
 export function ProfileFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
   return (

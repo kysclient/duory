@@ -10,11 +10,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/community",
     "/memories",
     "/anniversaries",
+    "/privacy",
+    "/terms",
   ].map((route) => ({
+    changeFrequency: (route === "" ? "daily" : "weekly") as MetadataRoute.Sitemap[number]["changeFrequency"],
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
-    changeFrequency: "daily" as const,
-    priority: route === "" ? 1 : 0.8,
+    priority: route === "" ? 1 : 0.7,
   }));
 
   return [...routes];

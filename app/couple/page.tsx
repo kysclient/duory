@@ -17,6 +17,8 @@ import {
   Copy,
   RefreshCw,
   Check,
+  Lightbulb,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -27,10 +29,27 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import dayjs from "dayjs";
 
+const formatRemainingTime = (expiresAt: string | null) => {
+  if (!expiresAt) return null;
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+
+  if (diffMs <= 0) return "만료됨";
+
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes}분 남았어요`;
+  if (minutes === 0) return `${hours}시간 남았어요`;
+  return `${hours}시간 ${minutes}분 남았어요`;
+};
+
 export default function CouplePage() {
   const { user, couple, partner, daysCount, signOut } = useAuth();
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState<string>("");
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null);
+  const [remainingText, setRemainingText] = useState<string | null>(null);
   const [isBreakupOpen, setIsBreakupOpen] = useState(false);
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,11 +67,14 @@ export default function CouplePage() {
         const existingCode = await getActiveInviteCode(user.id);
         
         if (existingCode) {
-          setInviteCode(existingCode);
+          setInviteCode(existingCode.code);
+          setInviteExpiresAt(existingCode.expiresAt);
         } else {
           // 없으면 새로 생성
           const newCode = await createInviteCode(user.id);
-          setInviteCode(newCode);
+          const refreshedCode = await getActiveInviteCode(user.id);
+          setInviteCode(refreshedCode?.code ?? newCode);
+          setInviteExpiresAt(refreshedCode?.expiresAt ?? null);
         }
       } catch (error) {
         console.error("초대코드 처리 실패:", error);
@@ -63,6 +85,21 @@ export default function CouplePage() {
 
     fetchOrCreateInviteCode();
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!inviteExpiresAt) {
+      setRemainingText(null);
+      return;
+    }
+
+    const updateRemainingText = () => {
+      setRemainingText(formatRemainingTime(inviteExpiresAt));
+    };
+
+    updateRemainingText();
+    const interval = setInterval(updateRemainingText, 30000);
+    return () => clearInterval(interval);
+  }, [inviteExpiresAt]);
 
   // 초대코드 복사
   const handleCopyCode = () => {
@@ -83,14 +120,16 @@ export default function CouplePage() {
       const { error: updateError } = await supabase
         .from("invite_codes")
         .update({ used: true })
-        .eq("creator_id", user.id)
+        .eq("created_by", user.id)
         .eq("used", false);
 
       if (updateError) throw updateError;
 
       // 새 코드 생성
       const newCode = await createInviteCode(user.id);
-      setInviteCode(newCode);
+      const refreshedCode = await getActiveInviteCode(user.id);
+      setInviteCode(refreshedCode?.code ?? newCode);
+      setInviteExpiresAt(refreshedCode?.expiresAt ?? null);
       setIsRegenerateOpen(false);
       toast.success("초대코드가 재발급되었습니다", {
         description: "새로운 코드를 공유해주세요."
@@ -331,24 +370,26 @@ export default function CouplePage() {
                       초대코드 재발급
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
+                  <DialogContent className="p-6 sm:p-7">
+                    <DialogHeader className="space-y-2 text-center">
                       <DialogTitle>초대코드 재발급</DialogTitle>
-                      <DialogDescription>
+                      <DialogDescription className="leading-relaxed">
                         기존 초대코드가 무효화되고 새로운 코드가
                         발급됩니다.
                       </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
+                    <DialogFooter className="mt-6 gap-3 sm:gap-2">
                       <Button
                         variant="secondary"
                         onClick={() => setIsRegenerateOpen(false)}
+                        className="w-full sm:w-auto"
                       >
                         취소
                       </Button>
                       <Button
                         onClick={handleRegenerateCode}
                         disabled={isProcessing}
+                        className="w-full sm:w-auto"
                       >
                         {isProcessing ? "발급 중..." : "재발급"}
                       </Button>
@@ -359,8 +400,20 @@ export default function CouplePage() {
 
               {/* 안내 */}
               <div className="mt-4 space-y-2 text-center text-xs text-muted-foreground">
-                <p>💡 연인이 코드를 입력하면 자동으로 연결돼요</p>
-                <p>⏰ 코드는 24시간 동안 유효해요</p>
+                <p className="flex items-center justify-center gap-2">
+                  <Lightbulb className="h-3.5 w-3.5 text-[#1DA1F2]" />
+                  <span>연인이 코드를 입력하면 자동으로 연결돼요</span>
+                </p>
+                <p className="flex items-center justify-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-[#1DA1F2]" />
+                  <span>
+                    {remainingText
+                      ? remainingText === "만료됨"
+                        ? "코드가 만료되었어요. 재발급해주세요."
+                        : `만료까지 ${remainingText}`
+                      : "코드는 24시간 동안 유효해요"}
+                  </span>
+                </p>
               </div>
             </>
           )}

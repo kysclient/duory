@@ -3,20 +3,38 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowRight, Copy, Check, Home } from "lucide-react";
+import { ArrowRight, Copy, Check, Home, Lightbulb, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import {
   createInviteCode,
   connectWithInviteCode,
+  getActiveInviteCode,
 } from "@/lib/api/invite-codes";
 
 type Step = "choice" | "create-code" | "enter-code";
+
+const formatRemainingTime = (expiresAt: string | null) => {
+  if (!expiresAt) return null;
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+
+  if (diffMs <= 0) return "만료됨";
+
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes}분 남았어요`;
+  if (minutes === 0) return `${hours}시간 남았어요`;
+  return `${hours}시간 ${minutes}분 남았어요`;
+};
 
 export default function ConnectPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>("choice");
   const [inviteCode, setInviteCode] = useState("");
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null);
+  const [remainingText, setRemainingText] = useState<string | null>(null);
   const [inputCode, setInputCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,7 +64,11 @@ export default function ConnectPage() {
 
     try {
       const code = await createInviteCode(user.id);
-      setInviteCode(code);
+      const activeCode = await getActiveInviteCode(user.id);
+      setInviteCode(activeCode?.code ?? code);
+      setInviteExpiresAt(activeCode?.expiresAt ?? null);
+      console.log('activeCode : ', activeCode);
+      console.log('code : ', code)
       setStep("create-code");
     } catch (error: any) {
       console.error("Error generating code:", error);
@@ -55,6 +77,23 @@ export default function ConnectPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!inviteExpiresAt) {
+      setRemainingText(null);
+      return;
+    }
+
+    console.log('inviteExpiresAt : ', inviteExpiresAt);
+
+    const updateRemainingText = () => {
+      setRemainingText(formatRemainingTime(inviteExpiresAt));
+    };
+
+    updateRemainingText();
+    const interval = setInterval(updateRemainingText, 30000);
+    return () => clearInterval(interval);
+  }, [inviteExpiresAt]);
 
   // 클립보드 복사
   const copyCode = async () => {
@@ -244,8 +283,20 @@ export default function ConnectPage() {
 
             {/* 안내 */}
             <div className="space-y-2 text-center text-xs text-muted-foreground">
-              <p>💡 연인이 코드를 입력하면 자동으로 연결돼요</p>
-              <p>⏰ 코드는 24시간 동안 유효해요</p>
+              <p className="flex items-center justify-center gap-2">
+                <Lightbulb className="h-3.5 w-3.5 text-[#1DA1F2]" />
+                <span>연인이 코드를 입력하면 자동으로 연결돼요</span>
+              </p>
+              <p className="flex items-center justify-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-[#1DA1F2]" />
+                <span>
+                  {remainingText
+                    ? remainingText === "만료됨"
+                      ? "코드가 만료되었어요. 다시 생성해주세요."
+                      : `만료까지 ${remainingText}`
+                    : "코드는 24시간 동안 유효해요"}
+                </span>
+              </p>
             </div>
           </div>
         </div>

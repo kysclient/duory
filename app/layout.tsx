@@ -24,6 +24,10 @@ export const viewport: Viewport = {
   ],
 };
 
+const naverSiteVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://duory.app";
+const ogImageUrl = new URL("/logo_512.png", siteUrl);
+
 export const metadata: Metadata = {
   title: {
     default: "듀오리(Duory) | 우리 둘만의 소중한 기록",
@@ -31,28 +35,30 @@ export const metadata: Metadata = {
   },
   description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 우리만의 피드, 커뮤니티, 그리고 잊지 못할 기념일 관리까지 시작해보세요.",
   keywords: ["커플앱", "커플기록", "기념일관리", "연애기록", "커플피드", "커플일기", "듀오리", "Duory"],
+  applicationName: "Duory",
   authors: [{ name: "Duory Team" }],
   creator: "Duory",
   publisher: "Duory",
+  category: "Lifestyle",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://duory.app"), // 실제 도메인으로 변경 필요
+  metadataBase: new URL(siteUrl),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "듀오리(Duory) | 우리 둘만의 소중한 기록",
     description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 지금 우리만의 추억을 쌓아보세요.",
-    url: "https://duory.app",
+    url: siteUrl,
     siteName: "Duory",
     images: [
       {
-        url: "/logo_512.png", // 카톡 공유 시 보일 메인 이미지
-        width: 1200,
-        height: 630,
+        url: ogImageUrl,
+        width: 512,
+        height: 512,
         alt: "Duory - 우리 둘만의 기록",
       },
     ],
@@ -63,8 +69,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "듀오리(Duory) | 우리 둘만의 소중한 기록",
     description: "연인과 함께하는 가장 설레는 기록 공간",
-    images: ["/logo_512.png"],
+    images: [ogImageUrl],
   },
+  verification: naverSiteVerification
+    ? { other: { "naver-site-verification": naverSiteVerification } }
+    : undefined,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -98,24 +107,46 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "듀오리 (Duory)",
-    "description": "연인과 함께하는 우리만의 소중한 기록 공간",
-    "applicationCategory": "SocialNetworkingApplication",
-    "operatingSystem": "iOS, Android, Windows, macOS",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "KRW"
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Duory",
+      "url": siteUrl,
+      "logo": ogImageUrl.toString(),
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "ratingCount": "1024"
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "듀오리 (Duory)",
+      "url": siteUrl,
+      "inLanguage": "ko-KR",
+      "description": "연인과 함께하는 우리만의 소중한 기록 공간",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Duory",
+        "url": "https://duory.app",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "듀오리 (Duory)",
+      "description": "연인과 함께하는 우리만의 소중한 기록 공간",
+      "applicationCategory": "SocialNetworkingApplication",
+      "operatingSystem": "iOS, Android, Windows, macOS",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KRW"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "1024"
+      }
     }
-  };
+  ];
 
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -128,7 +159,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               :root {
-                --font-pretendard: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+                --font-gmarket: "GmarketSans", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
               }
             `,
           }}
@@ -136,7 +167,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistMono.variable} antialiased no-scrollbar`}
-        style={{ fontFamily: "var(--font-pretendard)" }}
+        style={{ fontFamily: "var(--font-gmarket)" }}
       >
         <RegisterServiceWorker />
         <ThemeProvider

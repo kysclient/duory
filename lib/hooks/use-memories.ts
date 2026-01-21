@@ -198,11 +198,13 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
     }
   };
 
+  const refresh = useCallback(() => fetchMemories(false), [fetchMemories]);
+
   return { 
     memories, 
     loading, 
     error, 
-    refresh: () => fetchMemories(false), // Pull-to-refresh는 로딩 표시
+    refresh, // Pull-to-refresh는 로딩 표시
     toggleLike,
     deleteMemory
   };

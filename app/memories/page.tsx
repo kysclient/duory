@@ -22,6 +22,32 @@ export default function MemoriesPage() {
   const [selectedMemory, setSelectedMemory] = useState<MemoryWithAuthor | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  const gallerySections = (() => {
+    const sections: { key: string; title: string; items: MemoryWithAuthor[] }[] = [];
+    const sectionIndex = new Map<string, number>();
+
+    memories.forEach((memory) => {
+      const rawDate = memory.memory_date ?? memory.created_at;
+      const date = rawDate ? new Date(rawDate) : null;
+      const year = date ? date.getFullYear() : NaN;
+      const month = date ? date.getMonth() + 1 : NaN;
+      const key = Number.isFinite(year) && Number.isFinite(month)
+        ? `${year}-${String(month).padStart(2, "0")}`
+        : "unknown";
+      const title = key === "unknown" ? "날짜 없음" : `${year}년 ${month}월`;
+
+      const index = sectionIndex.get(key);
+      if (index === undefined) {
+        sectionIndex.set(key, sections.length);
+        sections.push({ key, title, items: [memory] });
+      } else {
+        sections[index].items.push(memory);
+      }
+    });
+
+    return sections;
+  })();
+
   const handleMemoryClick = (memory: MemoryWithAuthor) => {
     setSelectedMemory(memory);
     setIsDetailOpen(true);
@@ -120,40 +146,58 @@ export default function MemoriesPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-1">
-                    {memories.map((memory) => {
-                      const thumbnail = memory.images?.[0];
-                      return (
-                        <button
-                          key={memory.id}
-                          onClick={() => handleMemoryClick(memory)}
-                          className="group relative aspect-square overflow-hidden bg-muted transition-opacity hover:opacity-90"
-                        >
-                          {thumbnail ? (
-                            <Image
-                              src={thumbnail}
-                              alt="추억"
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 33vw, 170px"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted p-3">
-                              <p className="line-clamp-4 text-xs text-muted-foreground">
-                                {memory.content}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* 다중 이미지 인디케이터 */}
-                          {memory.images && memory.images.length > 1 && (
-                            <div className="absolute right-2 top-2">
-                              <LayoutGrid className="h-4 w-4 text-white drop-shadow-lg" />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
+                  <div className="space-y-3">
+                    {gallerySections.map((section) => (
+                      <div key={section.key}>
+                        <div className="px-2 py-2 text-xs font-semibold text-muted-foreground">
+                          {section.title}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {section.items.map((memory) => {
+                            const thumbnail = memory.images?.[0];
+                            const videoUrl = memory.videos?.[0];
+                            return (
+                              <button
+                                key={memory.id}
+                                onClick={() => handleMemoryClick(memory)}
+                                className="group relative aspect-square overflow-hidden bg-muted transition-opacity hover:opacity-90"
+                              >
+                                {videoUrl ? (
+                                  <video
+                                    src={videoUrl}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                ) : thumbnail ? (
+                                  <Image
+                                    src={thumbnail}
+                                    alt="추억"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 33vw, 170px"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-muted p-3">
+                                    <p className="line-clamp-4 text-xs text-muted-foreground">
+                                      {memory.content}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {/* 다중 이미지 인디케이터 */}
+                                {memory.images && memory.images.length > 1 && !videoUrl && (
+                                  <div className="absolute right-2 top-2">
+                                    <LayoutGrid className="h-4 w-4 text-white drop-shadow-lg" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -162,7 +206,7 @@ export default function MemoriesPage() {
         </PullToRefresh>
 
         {/* FAB - 추억 작성 버튼 */}
-        <CreateMemoryModal />
+        <CreateMemoryModal onCreated={refresh} />
       </main>
 
       {/* 메모리 디테일 모달 */}

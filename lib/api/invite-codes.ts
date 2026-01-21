@@ -30,14 +30,17 @@ export async function connectWithInviteCode(
       .select("*")
       .eq("code", code)
       .eq("used", false)
-      .gt("expires_at", new Date().toISOString())
       .single();
 
     if (fetchError || !inviteCode) {
-      return { success: false, error: "유효하지 않거나 만료된 코드입니다" };
+      return { success: false, error: "유효하지 않은 코드입니다" };
     }
 
-    if (inviteCode.creator_id === userId) {
+    if (new Date(inviteCode.expires_at).getTime() <= Date.now()) {
+      return { success: false, error: "만료된 코드입니다" };
+    }
+
+    if (inviteCode.created_by === userId) {
       return { success: false, error: "본인이 생성한 코드는 사용할 수 없습니다" };
     }
 
@@ -45,7 +48,7 @@ export async function connectWithInviteCode(
     const { data: creator } = await supabase
       .from("users")
       .select("couple_id")
-      .eq("id", inviteCode.creator_id)
+      .eq("id", inviteCode.created_by)
       .single();
 
     if (creator?.couple_id) {
@@ -67,7 +70,7 @@ export async function connectWithInviteCode(
     const { data: couple, error: coupleError } = await supabase
       .from("couples")
       .insert({
-        user1_id: inviteCode.creator_id,
+        user1_id: inviteCode.created_by,
         user2_id: userId,
         start_date: new Date().toISOString(),
       })
@@ -84,7 +87,7 @@ export async function connectWithInviteCode(
       supabase
         .from("users")
         .update({ couple_id: couple.id })
-        .eq("id", inviteCode.creator_id),
+        .eq("id", inviteCode.created_by),
       supabase
         .from("users")
         .update({ couple_id: couple.id })
@@ -107,11 +110,13 @@ export async function connectWithInviteCode(
 /**
  * 사용자의 활성 초대 코드 가져오기
  */
-export async function getActiveInviteCode(userId: string): Promise<string | null> {
+export async function getActiveInviteCode(
+  userId: string
+): Promise<{ code: string; expiresAt: string } | null> {
   const { data, error } = await supabase
     .from("invite_codes")
-    .select("code")
-    .eq("creator_id", userId)
+    .select("code, expires_at")
+    .eq("created_by", userId)
     .eq("used", false)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
@@ -122,6 +127,9 @@ export async function getActiveInviteCode(userId: string): Promise<string | null
     return null;
   }
 
-  return data.code;
+  return {
+    code: data.code,
+    expiresAt: data.expires_at,
+  };
 }
 

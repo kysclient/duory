@@ -6,19 +6,21 @@ import { BottomNav } from "@/components/bottom-nav";
 import { CreateMemoryModal } from "@/components/create-memory-modal";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import PullToRefresh from "react-simple-pull-to-refresh";
 
 export default function Home() {
   const { user, couple, daysCount, refreshUser } = useAuth();
   const router = useRouter();
+  const [feedRefreshToken, setFeedRefreshToken] = useState(0);
   
   // 커플 연결 완료 → 메인 페이지 표시
   const isConnected = !!couple;
 
   const handleRefresh = async () => {
     await refreshUser();
+    setFeedRefreshToken((prev) => prev + 1);
     // 페이지 새로고침을 트리거하기 위해 약간의 딜레이
     return new Promise((resolve) => setTimeout(resolve, 500));
   };
@@ -69,12 +71,12 @@ export default function Home() {
             }
           >
             <main className="mx-auto max-w-lg pb-20">
-              <MemoryFeed />
+              <MemoryFeed refreshToken={feedRefreshToken} />
             </main>
           </PullToRefresh>
 
           {/* FAB - 추억 작성 버튼 */}
-          <CreateMemoryModal />
+          <CreateMemoryModal onCreated={() => setFeedRefreshToken((prev) => prev + 1)} />
         </>
       ) : (
         <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center pb-20">

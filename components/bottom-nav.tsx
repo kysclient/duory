@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Images, PanelLeft, User, } from "lucide-react";
-import { HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon, MemoriesIcon, MemoriesFilledIcon, ProfileFilledIcon, ProfileIcon } from "./icons";
+import { CommunityFilledIcon, CommunityIcon, HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon, MemoriesIcon, MemoriesFilledIcon, ProfileFilledIcon, ProfileIcon } from "./icons";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -31,6 +31,12 @@ const navItems: NavItem[] = [
     type: "custom",
     icon: HeartIcon,
     iconFilled: HeartFilledIcon,
+    href: "/questions",
+  },
+  {
+    type: "custom",
+    icon: CommunityIcon,
+    iconFilled: CommunityFilledIcon,
     href: "/community",
   },
   {
@@ -52,7 +58,7 @@ export function BottomNav() {
       }}
     >
       <div className="mx-auto max-w-lg">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           
           {navItems.map((item, index) => {
             const isActive = pathname === item.href;
@@ -61,7 +67,7 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center justify-center py-4 transition-opacity active:opacity-40"
+                className="flex items-center justify-center py-4 transition-all active:scale-95 active:opacity-40"
               >
                 {item.type === "custom" && item.icon && item.iconFilled ? (
                   <>

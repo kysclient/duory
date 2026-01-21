@@ -53,7 +53,8 @@ export type Couple = {
 export type InviteCode = {
   id: string;
   code: string;
-  creator_id: string;
+  created_by: string;
+  couple_id: string;
   used: boolean;
   expires_at: string;
   created_at: string;
@@ -66,6 +67,7 @@ export type Memory = {
   title?: string; // 추가됨
   content: string;
   images?: string[]; // image_urls -> images (배열)
+  videos?: string[]; // 영상 URL 배열
   location?: string;
   memory_date: string; // date -> memory_date
   is_public: boolean;
