@@ -36,7 +36,15 @@ export function MemoryDetailModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoViewerOpen, setIsVideoViewerOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoPoster, setVideoPoster] = useState<string | null>(null);
+  const videoUrl = memory?.videos?.[0];
+
+  useEffect(() => {
+    if (!isOpen || !videoRef.current) return;
+    const playPromise = videoRef.current.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => undefined);
+    }
+  }, [isOpen, videoUrl]);
 
   if (!memory) return null;
 
@@ -46,14 +54,9 @@ export function MemoryDetailModal({
   };
 
   const handleLikeClick = () => {
+    if (!memory) return;
     onLike(memory.id);
   };
-
-  const videoUrl = memory.videos?.[0];
-
-  useEffect(() => {
-    setVideoPoster(null);
-  }, [videoUrl]);
 
   return (
     <>
@@ -147,24 +150,9 @@ export function MemoryDetailModal({
                     muted
                     playsInline
                     loop
+                    autoPlay
                     preload="metadata"
-                    poster={videoPoster ?? undefined}
-                    crossOrigin="anonymous"
-                    onLoadedData={() => {
-                      if (!videoRef.current || videoPoster) return;
-                      try {
-                        const video = videoRef.current;
-                        const canvas = document.createElement("canvas");
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const ctx = canvas.getContext("2d");
-                        if (!ctx) return;
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        setVideoPoster(canvas.toDataURL("image/jpeg", 0.8));
-                      } catch {
-                        // ignore poster capture failures
-                      }
-                    }}
+                    poster="/heart.png"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">

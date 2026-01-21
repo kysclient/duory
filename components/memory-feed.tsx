@@ -38,7 +38,6 @@ function VideoInlinePlayer({
   onOpen: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [poster, setPoster] = useState<string | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -81,23 +80,7 @@ function VideoInlinePlayer({
         playsInline
         loop
         preload="metadata"
-        poster={poster ?? undefined}
-        crossOrigin="anonymous"
-        onLoadedData={() => {
-          if (!videoRef.current || poster) return;
-          try {
-            const video = videoRef.current;
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            setPoster(canvas.toDataURL("image/jpeg", 0.8));
-          } catch {
-            // ignore poster capture failures
-          }
-        }}
+        poster="/heart.png"
       />
       <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">
