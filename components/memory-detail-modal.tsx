@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Heart, MessageCircle, MoreHorizontal, Play, X } from "lucide-react";
 import Image from "next/image";
@@ -35,6 +35,8 @@ export function MemoryDetailModal({
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isVideoViewerOpen, setIsVideoViewerOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoPoster, setVideoPoster] = useState<string | null>(null);
 
   if (!memory) return null;
 
@@ -49,10 +51,17 @@ export function MemoryDetailModal({
 
   const videoUrl = memory.videos?.[0];
 
+  useEffect(() => {
+    setVideoPoster(null);
+  }, [videoUrl]);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-none h-screen w-screen p-0 m-0 bg-background border-none flex flex-col overflow-hidden">
+        <DialogContent
+          className="max-w-none h-dvh w-screen p-0 m-0 bg-background border-none flex flex-col overflow-hidden"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
           {/* 헤더 */}
           <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-lg px-4 py-3">
             <button
@@ -132,12 +141,30 @@ export function MemoryDetailModal({
                   className="relative aspect-video w-full overflow-hidden bg-black"
                 >
                   <video
+                    ref={videoRef}
                     src={videoUrl}
                     className="h-full w-full object-cover"
                     muted
                     playsInline
                     loop
                     preload="metadata"
+                    poster={videoPoster ?? undefined}
+                    crossOrigin="anonymous"
+                    onLoadedData={() => {
+                      if (!videoRef.current || videoPoster) return;
+                      try {
+                        const video = videoRef.current;
+                        const canvas = document.createElement("canvas");
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const ctx = canvas.getContext("2d");
+                        if (!ctx) return;
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        setVideoPoster(canvas.toDataURL("image/jpeg", 0.8));
+                      } catch {
+                        // ignore poster capture failures
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">

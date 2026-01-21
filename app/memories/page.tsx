@@ -15,6 +15,37 @@ import { MemoriesFilledIcon } from "@/components/icons";
 
 type ViewMode = "feed" | "gallery";
 
+function VideoThumbnail({ src }: { src: string }) {
+  const [poster, setPoster] = useState<string | null>(null);
+
+  return (
+    <video
+      src={src}
+      className="h-full w-full object-cover"
+      muted
+      playsInline
+      preload="metadata"
+      poster={poster ?? undefined}
+      crossOrigin="anonymous"
+      onLoadedData={(event) => {
+        if (poster) return;
+        const video = event.currentTarget;
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          setPoster(canvas.toDataURL("image/jpeg", 0.8));
+        } catch {
+          // ignore poster capture failures
+        }
+      }}
+    />
+  );
+}
+
 export default function MemoriesPage() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("gallery");
@@ -163,13 +194,7 @@ export default function MemoriesPage() {
                                 className="group relative aspect-square overflow-hidden bg-muted transition-opacity hover:opacity-90"
                               >
                                 {videoUrl ? (
-                                  <video
-                                    src={videoUrl}
-                                    className="h-full w-full object-cover"
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                  />
+                                  <VideoThumbnail src={videoUrl} />
                                 ) : thumbnail ? (
                                   <Image
                                     src={thumbnail}

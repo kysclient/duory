@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/welcome",
     "/community",
     "/memories",
+    "/questions",
     "/anniversaries",
     "/privacy",
     "/terms",

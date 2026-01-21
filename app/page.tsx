@@ -14,6 +14,7 @@ export default function Home() {
   const { user, couple, daysCount, refreshUser } = useAuth();
   const router = useRouter();
   const [feedRefreshToken, setFeedRefreshToken] = useState(0);
+  const [showPwaBanner, setShowPwaBanner] = useState(false);
   
   // 커플 연결 완료 → 메인 페이지 표시
   const isConnected = !!couple;
@@ -25,12 +26,79 @@ export default function Home() {
     return new Promise((resolve) => setTimeout(resolve, 500));
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hasDismissedBanner = () => {
+      return document.cookie
+        .split("; ")
+        .some((row) => row.startsWith("pwa_guide_dismissed="));
+    };
+
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const update = () => {
+      const isStandalone =
+        mediaQuery.matches || (window.navigator as any).standalone === true;
+      setShowPwaBanner(!isStandalone && !hasDismissedBanner());
+    };
+
+    update();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", update);
+    } else if (typeof mediaQuery.addListener === "function") {
+      mediaQuery.addListener(update);
+    }
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === "function") {
+        mediaQuery.removeEventListener("change", update);
+      } else if (typeof mediaQuery.removeListener === "function") {
+        mediaQuery.removeListener(update);
+      }
+    };
+  }, []);
+
+  const handleOpenPwaGuide = () => {
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    document.cookie = `pwa_guide_dismissed=1; path=/; expires=${expires.toUTCString()}`;
+    setShowPwaBanner(false);
+    router.push("/pwa-guide");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {isConnected ? (
         <>
+          {showPwaBanner && (
+            <>
+              <div
+                className="fixed top-0 left-0 right-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg"
+                style={{
+                  paddingTop: "env(safe-area-inset-top)",
+                  height: "calc(44px + env(safe-area-inset-top))",
+                }}
+              >
+                <div className="mx-auto flex h-11 max-w-lg items-center justify-between px-4 text-sm">
+                  <span className="font-medium">앱으로 열기</span>
+                  <button
+                    onClick={handleOpenPwaGuide}
+                    className="rounded-full bg-primary px-3 py-1.5 text-xs text-primary-foreground transition-all active:scale-95"
+                  >
+                    방법 보기
+                  </button>
+                </div>
+              </div>
+              <div style={{ height: "calc(44px + env(safe-area-inset-top))" }} />
+            </>
+          )}
           {/* 헤더 */}
-          <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-lg">
+          <header
+            className="sticky z-30 border-b border-border bg-background/80 backdrop-blur-lg"
+            style={{
+              top: showPwaBanner ? "calc(44px + env(safe-area-inset-top))" : 0,
+            }}
+          >
             <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
               <div className="flex flex-row items-center">
               <Image
