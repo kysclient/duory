@@ -29,7 +29,7 @@ export default function CommunityPage() {
                 className="w-9 h-auto"
                 priority
               />
-              <span className="font-semibold translate -translate-y-0.1">Community</span>
+              <span className="font-semibold translate -translate-y-0.1">커뮤니티</span>
             </div>
           </div>
         </header>

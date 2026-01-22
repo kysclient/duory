@@ -31,7 +31,7 @@ function VideoThumbnail({ src }: { src: string }) {
 export default function MemoriesPage() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("gallery");
-  const { memories, loading, toggleLike, refresh } = useCoupleMemories();
+  const { memories, loading, toggleLike, refresh, deleteMemory } = useCoupleMemories();
   const [selectedMemory, setSelectedMemory] = useState<MemoryWithAuthor | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -70,6 +70,10 @@ export default function MemoriesPage() {
     toggleLike(memoryId);
   };
 
+  const handleDelete = async (memoryId: string) => {
+    return await deleteMemory(memoryId);
+  };
+
   const handleRefresh = async () => {
     await refresh();
     return new Promise((resolve) => setTimeout(resolve, 500));
@@ -91,7 +95,7 @@ export default function MemoriesPage() {
                 priority
               />
               <span className="font-semibold translate -translate-y-0.1">
-                Memories
+                우리의 추억
               </span>
             </div>
 
@@ -222,6 +226,7 @@ export default function MemoriesPage() {
         isOpen={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         onLike={handleLike}
+        onDelete={handleDelete}
         currentUserId={user?.id}
       />
 

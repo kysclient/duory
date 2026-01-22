@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Heart, MessageCircle, MoreHorizontal, Play, X } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Play, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -12,6 +12,19 @@ import { MemoryWithAuthor } from "@/lib/hooks/use-memories";
 import { CommentSheet } from "@/components/comment-sheet";
 import { ImageViewerModal } from "@/components/image-viewer-modal";
 import { VideoViewerModal } from "@/components/video-viewer-modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 
 dayjs.extend(relativeTime);
 dayjs.locale("ko");
@@ -21,6 +34,7 @@ interface MemoryDetailModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onLike: (memoryId: string) => void;
+  onDelete: (memoryId: string) => Promise<boolean>;
   currentUserId?: string;
 }
 
@@ -29,8 +43,12 @@ export function MemoryDetailModal({
   isOpen,
   onOpenChange,
   onLike,
+  onDelete,
   currentUserId,
 }: MemoryDetailModalProps) {
+  const { user } = useAuth();
+  const [openPopover, setOpenPopover] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -58,6 +76,27 @@ export function MemoryDetailModal({
     onLike(memory.id);
   };
 
+  const handleDeleteClick = () => {
+    setOpenPopover(false);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!memory) return;
+    const success = await onDelete(memory.id);
+    if (success) {
+      toast.success("추억이 삭제되었습니다", {
+        description: "삭제된 추억은 복구할 수 없습니다."
+      });
+      setDeleteDialogOpen(false);
+      onOpenChange(false);
+    } else {
+      toast.error("삭제 실패", {
+        description: "다시 시도해주세요."
+      });
+    }
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -74,7 +113,25 @@ export function MemoryDetailModal({
               <X className="h-5 w-5" />
             </button>
             <h2 className="text-sm font-semibold">추억</h2>
-            <div className="w-9" /> {/* Spacer for centering */}
+            {/* 액션 버튼 (피드와 동일) */}
+            <Popover open={openPopover} onOpenChange={setOpenPopover}>
+              <PopoverTrigger asChild>
+                <button className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </PopoverTrigger>
+              {user?.id === memory.created_by && (
+                <PopoverContent align="end" className="w-40 p-0">
+                  <button
+                    onClick={handleDeleteClick}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>삭제하기</span>
+                  </button>
+                </PopoverContent>
+              )}
+            </Popover>
           </div>
 
           {/* 컨텐츠 */}
@@ -222,6 +279,24 @@ export function MemoryDetailModal({
           onOpenChange={setIsCommentOpen}
         />
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>추억을 삭제하시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              삭제된 추억은 복구할 수 없습니다. 정말로 삭제하시겠어요?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 이미지 뷰어 */}
       {memory.images && memory.images.length > 0 && (
