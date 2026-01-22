@@ -299,6 +299,9 @@ export default function ProfilePage() {
                 width={50}
                 height={50}
               />
+              <div className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm ring-2 ring-background">
+                <Camera className="h-3.5 w-3.5" />
+              </div>
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                 <Camera className="h-6 w-6 text-white" />
               </div>

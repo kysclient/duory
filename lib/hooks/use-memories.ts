@@ -181,6 +181,17 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
         }
       }
 
+      // Supabase Storage에서 영상 삭제
+      if (memory?.videos && memory.videos.length > 0) {
+        for (const videoUrl of memory.videos) {
+          const pathMatch = videoUrl.match(/\/duory-images\/(.+)$/);
+          if (pathMatch) {
+            const filePath = pathMatch[1];
+            await supabase.storage.from("duory-images").remove([filePath]);
+          }
+        }
+      }
+
       // DB에서 추억 삭제 (CASCADE로 댓글, 좋아요도 자동 삭제됨)
       const { error: deleteError } = await supabase
         .from("memories")
