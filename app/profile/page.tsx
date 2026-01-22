@@ -45,13 +45,13 @@ export default function ProfilePage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [coupleError, setCoupleError] = useState("");
-  
+
   // 프로필 설정
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [nickname, setNickname] = useState("");
   const [profileError, setProfileError] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  
+
   // 통계 데이터
   const [memoriesCount, setMemoriesCount] = useState(0);
   const [anniversariesCount, setAnniversariesCount] = useState(0);
@@ -172,7 +172,7 @@ export default function ProfilePage() {
 
     setIsSaving(false);
     setIsCoupleOpen(false);
-    
+
     // 저장 후 페이지 새로고침으로 AuthContext 갱신
     window.location.reload();
   };
@@ -259,7 +259,7 @@ export default function ProfilePage() {
 
     setIsSaving(false);
     setIsProfileOpen(false);
-    
+
     // AuthContext 새로고침
     await refreshUser();
   };
@@ -286,25 +286,24 @@ export default function ProfilePage() {
 
         {/* 커플 프로필 카드 */}
         <div className="border-b border-border p-6">
-          <div className="mb-4 flex items-center justify-center">
+          <div className="mb-4 flex items-center justify-center relative">
             <button
               onClick={() => setIsProfileOpen(true)}
-              className="group relative h-20 w-20 overflow-hidden rounded-full bg-foreground/10 flex items-center justify-center transition-opacity hover:opacity-80"
+              className="group relative h-20 w-20 flex items-center justify-center transition-opacity hover:opacity-80"
             >
               <Image
                 src={user?.avatar_url || "/heart.png"}
                 alt="프로필"
-                className="object-cover"
-                sizes="80px"
+                className="object-cover w-full overflow-hidden rounded-full h-full"
                 width={50}
                 height={50}
               />
-              <div className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm ring-2 ring-background">
-                <Camera className="h-3.5 w-3.5" />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                <Camera className="h-6 w-6 text-white" />
-              </div>
+            <div className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm ring-2 ring-background">
+              <Camera className="h-3.5 w-3.5" />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera className="h-6 w-6 text-white" />
+            </div>
             </button>
           </div>
           <div className="text-center">
@@ -350,25 +349,25 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-2">
 
-           
-            <button
-              onClick={() => router.push("/couple")}
-              className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
-                  <Heart className="h-5 w-5" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-medium">커플 관리</div>
-                  <div className="text-xs text-muted-foreground">
-                    초대코드, 커플 정보 등
+
+              <button
+                onClick={() => router.push("/couple")}
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
+                    <Heart className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-medium">커플 관리</div>
+                    <div className="text-xs text-muted-foreground">
+                      초대코드, 커플 정보 등
+                    </div>
                   </div>
                 </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <Dialog open={isCoupleOpen} onOpenChange={setIsCoupleOpen}>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <Dialog open={isCoupleOpen} onOpenChange={setIsCoupleOpen}>
                 <DialogTrigger asChild>
                   <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70">
                     <div className="flex items-center gap-3">
@@ -440,7 +439,7 @@ export default function ProfilePage() {
             <div className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
               기념일
             </div>
-            <button 
+            <button
               onClick={() => router.push("/anniversaries")}
               className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
             >
@@ -486,7 +485,7 @@ export default function ProfilePage() {
               설정
             </div>
             <div className="space-y-2">
-       
+
 
               {/* 프로필 설정 Dialog */}
               <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
@@ -511,7 +510,7 @@ export default function ProfilePage() {
                           height={60}
                         />
                       </div>
-                      
+
                       <div className="flex flex-col items-center gap-2">
                         <Label
                           htmlFor="profile-image"
@@ -602,7 +601,7 @@ export default function ProfilePage() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => router.push("/settings")}
                 className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
               >
