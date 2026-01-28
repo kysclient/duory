@@ -52,7 +52,16 @@ export async function connectWithInviteCode(
       .single();
 
     if (creator?.couple_id) {
-      return { success: false, error: "상대방이 이미 다른 커플과 연결되어 있습니다" };
+      // 커플 데이터가 실제로 존재하는지 확인 (좀비 데이터 방지)
+      const { data: realCouple } = await supabase
+        .from("couples")
+        .select("id")
+        .eq("id", creator.couple_id)
+        .maybeSingle();
+
+      if (realCouple) {
+        return { success: false, error: "상대방이 이미 다른 커플과 연결되어 있습니다" };
+      }
     }
 
     // 3. 현재 사용자가 이미 커플인지 확인
@@ -63,7 +72,16 @@ export async function connectWithInviteCode(
       .single();
 
     if (currentUser?.couple_id) {
-      return { success: false, error: "이미 커플 연결이 되어 있습니다" };
+      // 커플 데이터가 실제로 존재하는지 확인 (좀비 데이터 방지)
+      const { data: realCouple } = await supabase
+        .from("couples")
+        .select("id")
+        .eq("id", currentUser.couple_id)
+        .maybeSingle();
+
+      if (realCouple) {
+        return { success: false, error: "이미 커플 연결이 되어 있습니다" };
+      }
     }
 
     // 4. 커플 생성
