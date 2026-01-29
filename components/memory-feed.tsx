@@ -111,7 +111,7 @@ interface MemoryFeedProps {
 
 export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps) {
   const { user } = useAuth();
-  const { memories: rawMemories, loading, error, refresh, toggleLike, deleteMemory } = useCoupleMemories({ publicOnly });
+  const { memories: rawMemories, loading, error, refresh, toggleLike, deleteMemory, incrementCommentCount } = useCoupleMemories({ publicOnly });
   const [memories, setMemories] = useState<MemoryWithFirstComment[]>([]);
   
   // 댓글 시트 상태 관리
@@ -187,8 +187,23 @@ export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps
   };
 
   const handleCommentAdded = () => {
-    // 실시간 구독이 자동으로 업데이트하므로 수동 refresh 불필요
-    // refresh(); 
+    if (!activeMemoryId) return;
+
+    // 1. Hook의 상태 업데이트 (전역/원본 데이터)
+    incrementCommentCount(activeMemoryId);
+
+    // 2. 로컬 상태 업데이트 (즉시 UI 반영)
+    setMemories((prev) =>
+      prev.map((m) => {
+        if (m.id === activeMemoryId) {
+          return {
+            ...m,
+            comments_count: (m.comments_count || 0) + 1,
+          };
+        }
+        return m;
+      })
+    );
   };
 
   const handleLikeClick = (id: string, isLiked?: boolean) => {

@@ -183,10 +183,10 @@ export default function ProfilePage() {
     if (!file || !user?.id) return;
 
     // 파일 크기 체크 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileError("파일 크기는 5MB 이하여야 합니다.");
-      return;
-    }
+    // if (file.size > 5 * 1024 * 1024) {
+    //   setProfileError("파일 크기는 5MB 이하여야 합니다.");
+    //   return;
+    // }
 
     // 이미지 파일 체크
     if (!file.type.startsWith("image/")) {
@@ -528,7 +528,7 @@ export default function ProfilePage() {
                           className="hidden"
                         />
                         <p className="text-xs text-muted-foreground">
-                          JPG, PNG (최대 5MB)
+                          JPG, PNG
                         </p>
                       </div>
                     </div>

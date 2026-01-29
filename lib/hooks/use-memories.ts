@@ -211,12 +211,26 @@ export function useCoupleMemories(options: UseMemoriesOptions = {}) {
 
   const refresh = useCallback(() => fetchMemories(false), [fetchMemories]);
 
+  // 댓글 수 낙관적 업데이트
+  const incrementCommentCount = (memoryId: string) => {
+    setMemories(prev => prev.map(m => {
+      if (m.id === memoryId) {
+        return {
+          ...m,
+          comments_count: (m.comments_count || 0) + 1
+        };
+      }
+      return m;
+    }));
+  };
+
   return { 
     memories, 
     loading, 
     error, 
     refresh, // Pull-to-refresh는 로딩 표시
     toggleLike,
-    deleteMemory
+    deleteMemory,
+    incrementCommentCount
   };
 }
