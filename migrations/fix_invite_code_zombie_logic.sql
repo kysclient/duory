@@ -69,3 +69,4 @@ BEGIN
   RETURN v_code;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

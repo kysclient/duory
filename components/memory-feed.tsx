@@ -143,7 +143,7 @@ export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps
       const memoriesWithComments = await Promise.all(
         rawMemories.map(async (memory) => {
           try {
-            const { data: comments } = await supabase
+            const { data: comments, count } = await supabase
               .from("memory_comments")
               .select(`
                 id,
@@ -154,7 +154,7 @@ export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps
                   nickname,
                   avatar_url
                 )
-              `)
+              `, { count: "exact" })
               .eq("memory_id", memory.id)
               .order("created_at", { ascending: true })
               .limit(1);
@@ -162,6 +162,7 @@ export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps
             return {
               ...memory,
               first_comment: comments && comments.length > 0 ? comments[0] : undefined,
+              comments_count: count ?? memory.comments_count,
             } as MemoryWithFirstComment;
           } catch (error) {
             console.error("첫 댓글 조회 실패:", error);
@@ -169,7 +170,6 @@ export function MemoryFeed({ publicOnly = false, refreshToken }: MemoryFeedProps
           }
         })
       );
-
       setMemories(memoriesWithComments);
     };
 
