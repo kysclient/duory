@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [partner, setPartner] = useState<User | null>(null);
   const [daysCount, setDaysCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  
+
   // ref로 변경 - 동기적 체크 가능
   const isFetchingRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async (userId: string): Promise<User | null> => {
     const requestId = Math.random().toString(36).substring(7);
-    
+
     // 이미 요청 중이면 대기 (ref로 동기 체크)
     if (isFetchingRef.current) {
       return null;
@@ -70,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       isFetchingRef.current = true;
       lastFetchTimeRef.current = now;
-      console.log(`🔍 [${requestId}] Fetching user data for:`, userId);
       const queryStart = Date.now();
 
       const { data, error } = await supabase
@@ -78,16 +77,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .eq("id", userId)
         .maybeSingle();
-      
+
       const queryTime = Date.now() - queryStart;
 
       if (error) {
         return null;
       }
 
-      
       // 커플 데이터가 있으면 함께 로드 (null, undefined, "null" 문자열 모두 체크)
-      if (data?.couple_id && data.couple_id !== 'null' && data.couple_id !== 'undefined') {
+      if (
+        data?.couple_id &&
+        data.couple_id !== "null" &&
+        data.couple_id !== "undefined"
+      ) {
         await fetchCoupleData(data.couple_id, userId);
       } else {
         // 커플 데이터 없으면 초기화
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPartner(null);
         setDaysCount(0);
       }
-      
+
       return data as User | null;
     } catch (error: any) {
       console.error(`💥 [${requestId}] Unexpected error:`, error);
@@ -107,15 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCoupleData = async (coupleId: string, userId: string) => {
     try {
-      
       // coupleId 유효성 검사
-      if (!coupleId || coupleId === 'null' || coupleId === 'undefined') {
+      if (!coupleId || coupleId === "null" || coupleId === "undefined") {
         setCouple(null);
         setPartner(null);
         setDaysCount(0);
         return;
       }
-      
+
       // 커플 정보 가져오기
       const { data: coupleData, error: coupleError } = await supabase
         .from("couples")
@@ -150,18 +151,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           : coupleData.user1_id;
 
       // 파트너 ID 정규화 (null, undefined, 빈 문자열 모두 null로 변환)
-      if (!partnerId || 
-          partnerId === 'null' || 
-          partnerId === 'undefined' || 
-          partnerId === '' ||
-          partnerId === null ||
-          partnerId === undefined) {
+      if (
+        !partnerId ||
+        partnerId === "null" ||
+        partnerId === "undefined" ||
+        partnerId === "" ||
+        partnerId === null ||
+        partnerId === undefined
+      ) {
         setPartner(null);
         return;
       }
 
       // UUID 형식 검증 (추가 안전장치)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(partnerId)) {
         setPartner(null);
         return;
@@ -222,22 +226,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        
         const sessionStart = Date.now();
-        
+
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        
 
         if (!mounted) {
-          console.log("⚠️ Component unmounted during session check");
           return;
         }
 
         if (session?.user) {
           const userData = await fetchUserData(session.user.id);
-          
+
           if (!userData && session.user.email) {
             await ensureUserRow(session.user.id, session.user.email);
             const retried = await fetchUserData(session.user.id);
@@ -252,7 +253,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
-          console.log("❌ 세션 없음");
           if (mounted) {
             setSupabaseUser(null);
             setUser(null);
@@ -267,7 +267,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } finally {
         isInitializing = false;
         if (mounted) {
-          console.log("✅ Auth 초기화 완료 - 로딩 해제");
           setLoading(false);
         }
       }
@@ -277,38 +276,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 리스너 설정 후 초기화 실행
     initializeAuth().then(() => {
       if (!mounted) return;
-      
-      console.log("📡 Setting up auth state listener (after init)...");
     });
-    
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("🔔 Auth state change:", event);
-      
       if (!mounted) return;
 
       // 초기화 중이면 무시
       if (isInitializing) {
-        console.log("⏭️ Skipping - still initializing");
         return;
       }
 
       // INITIAL_SESSION 무시
-      if (event === 'INITIAL_SESSION') {
-        console.log("⏭️ Skipping INITIAL_SESSION");
+      if (event === "INITIAL_SESSION") {
         return;
       }
 
       // SIGNED_IN - 이미 사용자 있으면 무시 (Alt+Tab 등)
-      if (event === 'SIGNED_IN' && user && session?.user.id === user.id) {
-        console.log("⏭️ User already loaded, skipping");
+      if (event === "SIGNED_IN" && user && session?.user.id === user.id) {
         return;
       }
 
       // SIGNED_OUT - 로그아웃 처리
-      if (event === 'SIGNED_OUT') {
-        console.log("👋 User signed out");
+      if (event === "SIGNED_OUT") {
         if (mounted) {
           setUser(null);
           setSupabaseUser(null);
@@ -317,22 +308,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // TOKEN_REFRESHED - 무시 (기존 데이터 유지)
-      if (event === 'TOKEN_REFRESHED') {
-        console.log("🔄 Token refreshed, keeping existing user data");
+      if (event === "TOKEN_REFRESHED") {
         return;
       }
 
       // 그 외 이벤트는 페이지 새로고침 권장
-      console.log("🔄 Auth state changed:", event, "- consider refreshing");
     });
 
     return () => {
-      console.log("🧹 Cleaning up auth listeners");
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
-
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -342,12 +329,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPartner(null);
     setDaysCount(0);
   };
-
-  useEffect(() => {
-    console.log('user : ', user)
-    console.log('supabaseUser : ', supabaseUser)
-
-  }, [user, supabaseUser])
 
   return (
     <AuthContext.Provider

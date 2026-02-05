@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { AuthGate } from "@/components/auth-gate";
 import { RegisterServiceWorker } from "@/components/register-sw";
 import { Toaster } from "@/components/ui/sonner";
+import { FcmManager } from "@/components/fcm-manager";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -31,10 +32,20 @@ const ogImageUrl = new URL("/logo_512.png", siteUrl);
 export const metadata: Metadata = {
   title: {
     default: "듀오리(Duory) | 우리 둘만의 소중한 기록",
-    template: "%s | 듀오리(Duory)"
+    template: "%s | 듀오리(Duory)",
   },
-  description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 우리만의 피드, 커뮤니티, 그리고 잊지 못할 기념일 관리까지 시작해보세요.",
-  keywords: ["커플앱", "커플기록", "기념일관리", "연애기록", "커플피드", "커플일기", "듀오리", "Duory"],
+  description:
+    "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 우리만의 피드, 커뮤니티, 그리고 잊지 못할 기념일 관리까지 시작해보세요.",
+  keywords: [
+    "커플앱",
+    "커플기록",
+    "기념일관리",
+    "연애기록",
+    "커플피드",
+    "커플일기",
+    "듀오리",
+    "Duory",
+  ],
   applicationName: "Duory",
   authors: [{ name: "Duory Team" }],
   creator: "Duory",
@@ -51,7 +62,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "듀오리(Duory) | 우리 둘만의 소중한 기록",
-    description: "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 지금 우리만의 추억을 쌓아보세요.",
+    description:
+      "둘만의 특별한 순간을 기록하고 공유하는 공간, 듀오리. 지금 우리만의 추억을 쌓아보세요.",
     url: siteUrl,
     siteName: "Duory",
     images: [
@@ -83,11 +95,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico" },
-      { url: "/logo_512.png", sizes: "512x512", type: "image/png" }
+      { url: "/logo_512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [
-      { url: "/logo_180.png", sizes: "180x180", type: "image/png" }
-    ],
+    apple: [{ url: "/logo_180.png", sizes: "180x180", type: "image/png" }],
   },
   robots: {
     index: true,
@@ -111,41 +121,41 @@ export default function RootLayout({
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Duory",
-      "url": siteUrl,
-      "logo": ogImageUrl.toString(),
+      name: "Duory",
+      url: siteUrl,
+      logo: ogImageUrl.toString(),
     },
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "듀오리 (Duory)",
-      "url": siteUrl,
-      "inLanguage": "ko-KR",
-      "description": "연인과 함께하는 우리만의 소중한 기록 공간",
-      "publisher": {
+      name: "듀오리 (Duory)",
+      url: siteUrl,
+      inLanguage: "ko-KR",
+      description: "연인과 함께하는 우리만의 소중한 기록 공간",
+      publisher: {
         "@type": "Organization",
-        "name": "Duory",
-        "url": "https://duory.app",
+        name: "Duory",
+        url: "https://duory.app",
       },
     },
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "듀오리 (Duory)",
-      "description": "연인과 함께하는 우리만의 소중한 기록 공간",
-      "applicationCategory": "SocialNetworkingApplication",
-      "operatingSystem": "iOS, Android, Windows, macOS",
-      "offers": {
+      name: "듀오리 (Duory)",
+      description: "연인과 함께하는 우리만의 소중한 기록 공간",
+      applicationCategory: "SocialNetworkingApplication",
+      operatingSystem: "iOS, Android, Windows, macOS",
+      offers: {
         "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "KRW"
+        price: "0",
+        priceCurrency: "KRW",
       },
-      "aggregateRating": {
+      aggregateRating: {
         "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "1024"
-      }
-    }
+        ratingValue: "4.9",
+        ratingCount: "1024",
+      },
+    },
   ];
 
   return (
@@ -267,7 +277,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <AuthGate>{children}</AuthGate>
+            <AuthGate>
+              <FcmManager />
+              {children}
+            </AuthGate>
           </AuthProvider>
         </ThemeProvider>
         <Toaster position="top-center" richColors />

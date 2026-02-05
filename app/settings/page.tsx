@@ -24,19 +24,60 @@ import {
   UserX,
   Download,
   Info,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useFcmToken } from "@/hooks/use-fcm-token";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { notificationPermissionStatus, requestForToken } = useFcmToken();
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    console.log(" ??");
+    if (notificationPermissionStatus === "granted") {
+      toast.success("이미 알림이 설정되어 있습니다.");
+      return;
+    }
+
+    if (notificationPermissionStatus === "denied") {
+      toast.error(
+        "알림 권한이 차단되어 있습니다. 브라우저 설정에서 허용해주세요.",
+      );
+      return;
+    }
+
+    if (typeof window !== "undefined" && !("Notification" in window)) {
+      toast.error("이 브라우저는 알림을 지원하지 않습니다.");
+      return;
+    }
+
+    setIsNotificationLoading(true);
+    try {
+      const token = await requestForToken();
+      if (token) {
+        toast.success("알림이 설정되었습니다.");
+      } else {
+        toast.error(
+          "알림 설정에 실패했습니다.\n(HTTPS 또는 localhost 환경에서만 동작합니다)",
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("알림 설정 중 오류가 발생했습니다.");
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
 
   // 회원탈퇴
   const handleDeleteAccount = async () => {
     if (!user?.id) return;
-    
+
     setIsDeleting(true);
 
     try {
@@ -54,7 +95,7 @@ export default function SettingsPage() {
       // - 좋아요 (memory_likes)
       // - 기념일 (anniversaries)
       // - 초대 코드 (invite_codes)
-      
+
       // 3. users 테이블에서 삭제 (모든 관련 데이터가 CASCADE로 삭제됨)
       const { error: deleteError } = await supabase
         .from("users")
@@ -64,7 +105,7 @@ export default function SettingsPage() {
       if (deleteError) throw deleteError;
 
       toast.success("회원탈퇴가 완료되었습니다", {
-        description: "그동안 Duory를 이용해주셔서 감사합니다."
+        description: "그동안 Duory를 이용해주셔서 감사합니다.",
       });
 
       // 4. 로그아웃 및 환영 페이지로 이동
@@ -73,7 +114,7 @@ export default function SettingsPage() {
     } catch (error: any) {
       console.error("회원탈퇴 실패:", error);
       toast.error("회원탈퇴에 실패했습니다", {
-        description: error.message || "잠시 후 다시 시도해주세요."
+        description: error.message || "잠시 후 다시 시도해주세요.",
       });
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
@@ -207,13 +248,51 @@ export default function SettingsPage() {
                     <Download className="h-5 w-5" />
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-medium">내 데이터 다운로드</div>
+                    <div className="text-sm font-medium">
+                      내 데이터 다운로드
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       추억, 기념일 등 내보내기
                     </div>
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+
+          {/* 알림 설정 */}
+          <div>
+            <h3 className="mb-3 px-1 text-xs font-semibold text-muted-foreground">
+              알림
+            </h3>
+            <div className="space-y-2">
+              <button
+                onClick={handleEnableNotifications}
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent active:opacity-70"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-medium">알림 설정</div>
+                    <div className="text-xs text-muted-foreground">
+                      {notificationPermissionStatus === "granted"
+                        ? "알림이 켜져있습니다"
+                        : notificationPermissionStatus === "denied"
+                          ? "알림이 차단되었습니다"
+                          : "터치하여 알림 켜기"}
+                    </div>
+                  </div>
+                </div>
+                {isNotificationLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : notificationPermissionStatus === "granted" ? (
+                  <div className="text-xs text-primary font-medium">ON</div>
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                )}
               </button>
             </div>
           </div>
@@ -270,7 +349,10 @@ export default function SettingsPage() {
       </main>
 
       {/* 회원탈퇴 확인 다이얼로그 */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl">
@@ -298,12 +380,14 @@ export default function SettingsPage() {
 
             <div className="rounded-lg border-l-4 border-destructive bg-destructive/10 p-3">
               <p className="text-xs leading-relaxed text-foreground">
-                ⚠️ <strong>되돌릴 수 없습니다.</strong> 탈퇴 후 동일한 계정으로 재가입해도 데이터는 복구되지 않습니다.
+                ⚠️ <strong>되돌릴 수 없습니다.</strong> 탈퇴 후 동일한 계정으로
+                재가입해도 데이터는 복구되지 않습니다.
               </p>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              데이터 백업이 필요하시면 '내 데이터 다운로드' 기능을 먼저 이용해주세요.
+              데이터 백업이 필요하시면 '내 데이터 다운로드' 기능을 먼저
+              이용해주세요.
             </p>
           </div>
 
@@ -326,4 +410,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

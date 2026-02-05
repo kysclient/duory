@@ -67,8 +67,6 @@ export default function ConnectPage() {
       const activeCode = await getActiveInviteCode(user.id);
       setInviteCode(activeCode?.code ?? code);
       setInviteExpiresAt(activeCode?.expiresAt ?? null);
-      console.log('activeCode : ', activeCode);
-      console.log('code : ', code)
       setStep("create-code");
     } catch (error: any) {
       console.error("Error generating code:", error);
@@ -83,8 +81,6 @@ export default function ConnectPage() {
       setRemainingText(null);
       return;
     }
-
-    console.log('inviteExpiresAt : ', inviteExpiresAt);
 
     const updateRemainingText = () => {
       setRemainingText(formatRemainingTime(inviteExpiresAt));
@@ -122,7 +118,7 @@ export default function ConnectPage() {
     } catch (error: any) {
       console.error("Error connecting:", error);
       // AbortError는 무시
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         setError("연결 중 오류가 발생했습니다");
       }
     } finally {

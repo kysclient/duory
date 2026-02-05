@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -24,6 +24,8 @@ import {
   RefreshCw,
   Download,
   Share2,
+  Sparkles,
+  Heart,
 } from "lucide-react";
 import {
   Popover,
@@ -34,6 +36,14 @@ import { Calendar22 } from "@/components/calendar22";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 import { createEvent, EventAttributes } from "ics";
+import {
+  calculateAutoAnniversaries,
+  getUpcomingAnniversaries,
+  getDdayText,
+  getAnniversaryBgClass,
+  type AutoAnniversary,
+} from "@/lib/utils/anniversary-calculator";
+import { cn } from "@/lib/utils";
 
 interface Anniversary {
   id: string;
@@ -44,20 +54,34 @@ interface Anniversary {
   created_at: string;
 }
 
+type TabType = "auto" | "custom";
+
 export default function AnniversariesPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, couple } = useAuth();
   const [anniversaries, setAnniversaries] = useState<Anniversary[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedAnniversary, setSelectedAnniversary] = useState<Anniversary | null>(null);
-  
+  const [activeTab, setActiveTab] = useState<TabType>("auto");
+
   // Form states
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isRecurring, setIsRecurring] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // 자동 계산 기념일
+  const autoAnniversaries = useMemo(() => {
+    if (!couple?.start_date) return [];
+    return calculateAutoAnniversaries(couple.start_date, 10);
+  }, [couple?.start_date]);
+
+  // 다가오는 자동 기념일 (오늘 이후)
+  const upcomingAutoAnniversaries = useMemo(() => {
+    return getUpcomingAnniversaries(autoAnniversaries);
+  }, [autoAnniversaries]);
 
   // 기념일 불러오기
   const fetchAnniversaries = async () => {
@@ -278,73 +302,137 @@ export default function AnniversariesPage() {
               className="flex items-center gap-2 text-sm font-medium"
             >
               <ChevronLeft className="h-5 w-5" />
-              <span>기념일 관리</span>
+              <span>기념일</span>
             </button>
             <button
-              onClick={() => setIsCreateOpen(true)}
+              onClick={() => {
+                setActiveTab("custom");
+                setIsCreateOpen(true);
+              }}
               className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 active:scale-95"
             >
               <Plus className="h-4 w-4" />
               추가
             </button>
           </div>
+
+          {/* 탭 */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab("auto")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors relative",
+                activeTab === "auto"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <Sparkles className="h-4 w-4" />
+                자동 기념일
+              </div>
+              {activeTab === "auto" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("custom")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors relative",
+                activeTab === "custom"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <Heart className="h-4 w-4" />
+                직접 추가
+              </div>
+              {activeTab === "custom" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          </div>
         </header>
 
         {/* 기념일 리스트 */}
         <div className="p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : anniversaries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 rounded-full bg-muted p-4">
-                <CalendarIcon className="h-8 w-8 text-muted-foreground" />
+          {activeTab === "auto" ? (
+            // 자동 계산 기념일 탭
+            !couple?.start_date ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-full bg-muted p-4">
+                  <CalendarIcon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">시작일을 설정해주세요</h3>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  커플 시작일을 설정하면 기념일이 자동으로 계산됩니다
+                </p>
+                <Button onClick={() => router.push("/couple")} size="sm">
+                  커플 설정으로 이동
+                </Button>
               </div>
-              <h3 className="mb-2 text-lg font-semibold">기념일이 없습니다</h3>
-              <p className="mb-6 text-sm text-muted-foreground">
-                특별한 날을 추가해보세요
-              </p>
-              <Button onClick={() => setIsCreateOpen(true)} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                기념일 추가
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {anniversaries.map((anniversary) => (
-                <div
-                  key={anniversary.id}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
-                >
-                  <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/10">
-                    <div className="text-xs font-medium text-primary">
-                      {dayjs(anniversary.date).format("M월")}
-                    </div>
-                    <div className="text-lg font-bold text-primary">
-                      {dayjs(anniversary.date).format("D")}
-                    </div>
+            ) : upcomingAutoAnniversaries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-full bg-muted p-4">
+                  <Sparkles className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">계산된 기념일이 없습니다</h3>
+                <p className="text-sm text-muted-foreground">
+                  시작일: {dayjs(couple.start_date).format("YYYY년 M월 D일")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* 시작일 안내 */}
+                <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Heart className="h-4 w-4 text-primary" />
+                    <span className="font-medium">시작일</span>
+                    <span className="text-muted-foreground">
+                      {dayjs(couple.start_date).format("YYYY년 M월 D일")}
+                    </span>
                   </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{anniversary.title}</h3>
-                      {anniversary.is_recurring && (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          매년
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{dayjs(anniversary.date).format("YYYY년 M월 D일")}</span>
-                      <span>•</span>
-                      <span className="font-medium text-primary">
-                        {getDday(anniversary.date)}
-                      </span>
-                    </div>
-                  </div>
+                </div>
 
-                  <div className="flex items-center gap-1">
+                {upcomingAutoAnniversaries.map((anniversary) => (
+                  <div
+                    key={anniversary.id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
+                  >
+                    <div className={cn(
+                      "flex h-12 w-12 flex-col items-center justify-center rounded-lg",
+                      getAnniversaryBgClass(anniversary.type)
+                    )}>
+                      <div className="text-xs font-medium">
+                        {dayjs(anniversary.date).format("M월")}
+                      </div>
+                      <div className="text-lg font-bold">
+                        {dayjs(anniversary.date).format("D")}
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{anniversary.title}</h3>
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          getAnniversaryBgClass(anniversary.type)
+                        )}>
+                          {anniversary.type === "days" && "일수"}
+                          {anniversary.type === "months" && "개월"}
+                          {anniversary.type === "years" && "주년"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{dayjs(anniversary.date).format("YYYY년 M월 D일")}</span>
+                        <span>•</span>
+                        <span className="font-medium text-primary">
+                          {getDdayText(anniversary.date)}
+                        </span>
+                      </div>
+                    </div>
+
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="rounded-lg p-2 transition-colors hover:bg-muted">
@@ -354,14 +442,24 @@ export default function AnniversariesPage() {
                       <PopoverContent className="w-56 p-2" align="end">
                         <div className="space-y-1">
                           <button
-                            onClick={() => addToGoogleCalendar(anniversary)}
+                            onClick={() => addToGoogleCalendar({
+                              ...anniversary,
+                              is_recurring: anniversary.type === "years",
+                              created_by: user?.id || "",
+                              created_at: "",
+                            })}
                             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
                           >
                             <CalendarIcon className="h-4 w-4" />
                             구글 캘린더에 추가
                           </button>
                           <button
-                            onClick={() => addToCalendar(anniversary)}
+                            onClick={() => addToCalendar({
+                              ...anniversary,
+                              is_recurring: anniversary.type === "years",
+                              created_by: user?.id || "",
+                              created_at: "",
+                            })}
                             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
                           >
                             <Download className="h-4 w-4" />
@@ -370,23 +468,108 @@ export default function AnniversariesPage() {
                         </div>
                       </PopoverContent>
                     </Popover>
-                    
-                    <button
-                      onClick={() => openEditModal(anniversary)}
-                      className="rounded-lg p-2 transition-colors hover:bg-muted"
-                    >
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(anniversary.id)}
-                      className="rounded-lg p-2 transition-colors hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </button>
                   </div>
+                ))}
+              </div>
+            )
+          ) : (
+            // 직접 추가 기념일 탭
+            loading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : anniversaries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-full bg-muted p-4">
+                  <CalendarIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <h3 className="mb-2 text-lg font-semibold">직접 추가한 기념일이 없습니다</h3>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  특별한 날을 직접 추가해보세요
+                </p>
+                <Button onClick={() => setIsCreateOpen(true)} size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  기념일 추가
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {anniversaries.map((anniversary) => (
+                  <div
+                    key={anniversary.id}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
+                  >
+                    <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/10">
+                      <div className="text-xs font-medium text-primary">
+                        {dayjs(anniversary.date).format("M월")}
+                      </div>
+                      <div className="text-lg font-bold text-primary">
+                        {dayjs(anniversary.date).format("D")}
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{anniversary.title}</h3>
+                        {anniversary.is_recurring && (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            매년
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{dayjs(anniversary.date).format("YYYY년 M월 D일")}</span>
+                        <span>•</span>
+                        <span className="font-medium text-primary">
+                          {getDday(anniversary.date)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="rounded-lg p-2 transition-colors hover:bg-muted">
+                            <Share2 className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2" align="end">
+                          <div className="space-y-1">
+                            <button
+                              onClick={() => addToGoogleCalendar(anniversary)}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
+                            >
+                              <CalendarIcon className="h-4 w-4" />
+                              구글 캘린더에 추가
+                            </button>
+                            <button
+                              onClick={() => addToCalendar(anniversary)}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
+                            >
+                              <Download className="h-4 w-4" />
+                              캘린더 파일 다운로드
+                            </button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      <button
+                        onClick={() => openEditModal(anniversary)}
+                        className="rounded-lg p-2 transition-colors hover:bg-muted"
+                      >
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(anniversary.id)}
+                        className="rounded-lg p-2 transition-colors hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </main>

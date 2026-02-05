@@ -12,7 +12,7 @@ const s3Client = new S3Client({
   forcePathStyle: false, // 가상 호스팅 스타일 사용
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME!;
+const BUCKET_NAME = process.env.AWS_S3_BUCKET!;
 
 export async function POST(request: NextRequest) {
   try {

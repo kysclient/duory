@@ -8,7 +8,10 @@ export default function TestSupabasePage() {
   const [loading, setLoading] = useState(false);
 
   const addResult = (test: string, status: string, data: any) => {
-    setResults((prev) => [...prev, { test, status, data, time: new Date().toISOString() }]);
+    setResults((prev) => [
+      ...prev,
+      { test, status, data, time: new Date().toISOString() },
+    ]);
   };
 
   const runTests = async () => {
@@ -17,23 +20,22 @@ export default function TestSupabasePage() {
 
     try {
       // 테스트 1: 환경 변수 확인
-      addResult(
-        "환경 변수",
-        "info",
-        {
-          url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-          keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
-        }
-      );
+      addResult("환경 변수", "info", {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        keyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
+      });
 
       // 테스트 2: Auth 세션 확인
-      console.log("테스트 2: Auth 세션 확인...");
       const sessionStart = Date.now();
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
       const sessionTime = Date.now() - sessionStart;
-      
+
       if (sessionError) {
-        addResult("Auth 세션", "error", { error: sessionError, time: sessionTime });
+        addResult("Auth 세션", "error", {
+          error: sessionError,
+          time: sessionTime,
+        });
       } else {
         addResult("Auth 세션", "success", {
           hasSession: !!sessionData.session,
@@ -43,49 +45,47 @@ export default function TestSupabasePage() {
       }
 
       // 테스트 3: Users 테이블 카운트 (간단한 쿼리)
-      console.log("테스트 3: Users 테이블 접근...");
       const countStart = Date.now();
-      
+
       const countPromise = supabase
         .from("users")
         .select("*", { count: "exact", head: true });
-      
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout")), 3000)
+
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 3000),
       );
 
       try {
-        const { count, error: countError } = await Promise.race([
+        const { count, error: countError } = (await Promise.race([
           countPromise,
-          timeout
-        ]) as any;
+          timeout,
+        ])) as any;
         const countTime = Date.now() - countStart;
 
         if (countError) {
-          addResult("Users 테이블 접근", "error", { 
+          addResult("Users 테이블 접근", "error", {
             error: countError,
             code: countError.code,
             message: countError.message,
-            time: countTime + "ms"
+            time: countTime + "ms",
           });
         } else {
-          addResult("Users 테이블 접근", "success", { 
+          addResult("Users 테이블 접근", "success", {
             count,
-            time: countTime + "ms"
+            time: countTime + "ms",
           });
         }
       } catch (timeoutError) {
         addResult("Users 테이블 접근", "timeout", {
           message: "3초 타임아웃",
-          time: Date.now() - countStart + "ms"
+          time: Date.now() - countStart + "ms",
         });
       }
 
       // 테스트 4: 현재 로그인된 사용자 데이터 조회
       if (sessionData.session?.user) {
-        console.log("테스트 4: 사용자 데이터 조회...");
         const userStart = Date.now();
-        
+
         const userPromise = supabase
           .from("users")
           .select("*")
@@ -93,14 +93,14 @@ export default function TestSupabasePage() {
           .maybeSingle();
 
         const userTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), 3000)
+          setTimeout(() => reject(new Error("Timeout")), 3000),
         );
 
         try {
-          const { data: userData, error: userError } = await Promise.race([
+          const { data: userData, error: userError } = (await Promise.race([
             userPromise,
-            userTimeout
-          ]) as any;
+            userTimeout,
+          ])) as any;
           const userTime = Date.now() - userStart;
 
           if (userError) {
@@ -108,46 +108,48 @@ export default function TestSupabasePage() {
               error: userError,
               code: userError.code,
               message: userError.message,
-              time: userTime + "ms"
+              time: userTime + "ms",
             });
           } else {
             addResult("사용자 데이터 조회", "success", {
               found: !!userData,
               data: userData,
-              time: userTime + "ms"
+              time: userTime + "ms",
             });
           }
         } catch (timeoutError) {
           addResult("사용자 데이터 조회", "timeout", {
             message: "3초 타임아웃",
-            time: Date.now() - userStart + "ms"
+            time: Date.now() - userStart + "ms",
           });
         }
       }
 
       // 테스트 5: 간단한 SELECT 1 쿼리 (RLS 없음)
-      console.log("테스트 5: 기본 연결 테스트...");
       const pingStart = Date.now();
-      
+
       try {
-        const { error: pingError } = await supabase.rpc('ping' as any);
+        const { error: pingError } = await supabase.rpc("ping" as any);
         const pingTime = Date.now() - pingStart;
-        
-        if (pingError && pingError.code !== '42883') { // 함수 없음 에러는 정상
-          addResult("기본 연결", "error", { error: pingError, time: pingTime + "ms" });
+
+        if (pingError && pingError.code !== "42883") {
+          // 함수 없음 에러는 정상
+          addResult("기본 연결", "error", {
+            error: pingError,
+            time: pingTime + "ms",
+          });
         } else {
-          addResult("기본 연결", "success", { 
+          addResult("기본 연결", "success", {
             message: "연결 성공",
-            time: pingTime + "ms"
+            time: pingTime + "ms",
           });
         }
       } catch (err) {
-        addResult("기본 연결", "info", { 
+        addResult("기본 연결", "info", {
           message: "RPC 함수 없음 (정상)",
-          time: Date.now() - pingStart + "ms"
+          time: Date.now() - pingStart + "ms",
         });
       }
-
     } catch (err: any) {
       addResult("전체 테스트", "error", { error: err.message });
     } finally {
@@ -176,10 +178,10 @@ export default function TestSupabasePage() {
                 result.status === "success"
                   ? "bg-green-50 border-green-500"
                   : result.status === "error"
-                  ? "bg-red-50 border-red-500"
-                  : result.status === "timeout"
-                  ? "bg-orange-50 border-orange-500"
-                  : "bg-blue-50 border-blue-500"
+                    ? "bg-red-50 border-red-500"
+                    : result.status === "timeout"
+                      ? "bg-orange-50 border-orange-500"
+                      : "bg-blue-50 border-blue-500"
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -189,10 +191,10 @@ export default function TestSupabasePage() {
                     result.status === "success"
                       ? "bg-green-500 text-white"
                       : result.status === "error"
-                      ? "bg-red-500 text-white"
-                      : result.status === "timeout"
-                      ? "bg-orange-500 text-white"
-                      : "bg-blue-500 text-white"
+                        ? "bg-red-500 text-white"
+                        : result.status === "timeout"
+                          ? "bg-orange-500 text-white"
+                          : "bg-blue-500 text-white"
                   }`}
                 >
                   {result.status}
@@ -209,4 +211,3 @@ export default function TestSupabasePage() {
     </div>
   );
 }
-

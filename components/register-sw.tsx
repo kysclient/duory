@@ -27,7 +27,7 @@ export function RegisterServiceWorker() {
         })
         .then((registration) => {
           console.log("✅ Service Worker registered:", registration.scope);
-          
+
           // 업데이트 확인
           registration.update();
         })
@@ -39,4 +39,3 @@ export function RegisterServiceWorker() {
 
   return null;
 }
-

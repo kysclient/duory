@@ -1,4 +1,39 @@
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC-kAVMGPQ1C--W1mtv2tpSvI8rSF6Z1eg",
+  authDomain: "duory-baf79.firebaseapp.com",
+  projectId: "duory-baf79",
+  storageBucket: "duory-baf79.firebasestorage.app",
+  messagingSenderId: "523423142845",
+  appId: "1:523423142845:web:fbf9c1b8b645118d5978d4",
+  measurementId: "G-54Y4M3VQMT"
+};
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Received background message ', payload);
+    // Customize notification here
+    const notificationTitle = payload.notification?.title || 'Duory Notification';
+    const notificationOptions = {
+      body: payload.notification?.body,
+      icon: '/logo_192.png',
+      badge: '/logo_180.png',
+      // data: payload.data
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
+  });
+} catch (e) {
+  console.error('[SW] Firebase init failed', e);
+}
+
 // Service Worker for Duory PWA
+
 // IMPORTANT: Change this version number on every deployment to force cache refresh
 const VERSION = 'v2.0.0';
 const CACHE_NAME = `duory-cache-${VERSION}`;
