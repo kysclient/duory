@@ -68,7 +68,7 @@ export const requestForToken = async () => {
     console.log("Fetching FCM token...");
     const currentToken = await getToken(messaging, {
       serviceWorkerRegistration: registration,
-      vapidKey: "BKe1HqV6X3aA6d9Y2-R5_K8u7o1c0w_p_n4t5u6r7e8.g9o0o1g2l3e", // Placeholder; oftentimes required to prevent hanging
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY, // Get from .env
     });
     console.log("Token fetched:", currentToken);
 

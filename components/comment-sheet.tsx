@@ -44,7 +44,12 @@ interface CommentSheetProps {
   onCommentAdded?: () => void; // 댓글 수 업데이트용
 }
 
-export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }: CommentSheetProps) {
+export function CommentSheet({
+  memoryId,
+  isOpen,
+  onOpenChange,
+  onCommentAdded,
+}: CommentSheetProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,13 +64,15 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
     try {
       const { data, error } = await supabase
         .from("memory_comments") // 테이블명 수정: comments -> memory_comments
-        .select(`
+        .select(
+          `
           *,
           author:users!user_id (
             nickname,
             avatar_url
           )
-        `)
+        `,
+        )
         .eq("memory_id", memoryId)
         .order("created_at", { ascending: true }); // 댓글은 시간순
 
@@ -73,7 +80,7 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
 
       const formattedComments: Comment[] = (data || []).map((item: any) => ({
         ...item,
-        author: item.author
+        author: item.author,
       }));
 
       setComments(formattedComments);
@@ -110,14 +117,13 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
       setNewComment("");
       await fetchComments(); // 목록 새로고침
       onCommentAdded?.(); // 부모 컴포넌트에 알림 (카운트 증가 등)
-      
+
       // 키보드 유지 (모바일 UX)
       inputRef.current?.focus();
-
     } catch (error) {
       console.error("댓글 작성 실패:", error);
       toast.error("댓글 작성 실패", {
-        description: "다시 시도해주세요."
+        description: "다시 시도해주세요.",
       });
     } finally {
       setSubmitting(false);
@@ -126,9 +132,11 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
 
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[85vh] flex flex-col">
-        <DrawerHeader className="border-b px-4 py-3">
-          <DrawerTitle className="text-center text-base font-semibold">댓글</DrawerTitle>
+      <DrawerContent className="max-h-[85dvh] flex flex-col">
+        <DrawerHeader className="border-b px-4 py-3 shrink-0">
+          <DrawerTitle className="text-center text-base font-semibold">
+            댓글
+          </DrawerTitle>
           <DrawerDescription className="sr-only">댓글 목록</DrawerDescription>
         </DrawerHeader>
 
@@ -141,7 +149,10 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
           ) : comments.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground opacity-60">
               <MessageSquareDashed className="h-10 w-10" strokeWidth={1.5} />
-              <p className="text-sm">아직 댓글이 없어요.<br />첫 번째 댓글을 남겨보세요!</p>
+              <p className="text-sm">
+                아직 댓글이 없어요.
+                <br />첫 번째 댓글을 남겨보세요!
+              </p>
             </div>
           ) : (
             <div className="flex flex-col gap-5">
@@ -157,7 +168,9 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold">{comment.author?.nickname || "알 수 없음"}</span>
+                      <span className="text-sm font-semibold">
+                        {comment.author?.nickname || "알 수 없음"}
+                      </span>
                       <span className="text-[10px] text-muted-foreground">
                         {dayjs(comment.created_at).fromNow()}
                       </span>
@@ -173,8 +186,8 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
         </div>
 
         {/* 댓글 입력창 (하단 고정) */}
-        <div className="border-t bg-background p-3 pb-8 sm:pb-3">
-          <form 
+        <div className="border-t bg-background p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <form
             onSubmit={handleSubmit}
             className="flex items-center gap-2 rounded-full border bg-muted/30 px-3 py-2 focus-within:bg-background focus-within:ring-1 focus-within:ring-ring transition-colors"
           >
@@ -200,9 +213,9 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
               disabled={!newComment.trim() || submitting}
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
-                newComment.trim() 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "text-muted-foreground"
+                newComment.trim()
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "text-muted-foreground",
               )}
             >
               {submitting ? (
@@ -219,7 +232,10 @@ export function CommentSheet({ memoryId, isOpen, onOpenChange, onCommentAdded }:
 }
 
 // 아이콘 컴포넌트 추가
-function MessageSquareDashed({ className, ...props }: React.SVGProps<SVGSVGElement>) {
+function MessageSquareDashed({
+  className,
+  ...props
+}: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -241,4 +257,3 @@ function MessageSquareDashed({ className, ...props }: React.SVGProps<SVGSVGEleme
     </svg>
   );
 }
-

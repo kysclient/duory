@@ -26,6 +26,12 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -230,9 +236,29 @@ export default function CalendarPage() {
               >
                 <ChevronLeft className="h-6 w-6 text-muted-foreground hover:text-foreground" />
               </button>
-              <h2 className="text-xl font-bold font-gmarket">
-                {currentDate.format("YYYY. MM")}
-              </h2>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-xl font-bold font-gmarket hover:bg-muted px-2 py-1 rounded-md transition-colors">
+                    {currentDate.format("YYYY. MM")}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <Calendar
+                    mode="single"
+                    selected={currentDate.toDate()}
+                    onSelect={(date) => {
+                      if (date) {
+                        setCurrentDate(dayjs(date));
+                        // Ideally we close the popover here, but Shadcn Popover 'open' state is uncontrolled by default.
+                        // User can click outside to close.
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
               <button
                 onClick={() => setCurrentDate((prev) => prev.add(1, "month"))}
               >

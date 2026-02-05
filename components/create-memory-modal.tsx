@@ -245,13 +245,14 @@ export function CreateMemoryModal({ onCreated }: CreateMemoryModalProps) {
       onCreated?.();
     } catch (error: any) {
       console.error("추억 저장 실패:", error);
+      console.error("Error Stack:", error?.stack); // 스택 트레이스 로깅
       const message =
         error?.message ||
         error?.details ||
         error?.error_description ||
         "문제가 발생했습니다. 다시 시도해주세요.";
       toast.error("추억 저장 실패", {
-        description: message,
+        description: `${message} (${error?.name || "Error"})`, // 에러 타입 표시
       });
     } finally {
       setLoading(false);
