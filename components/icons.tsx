@@ -142,6 +142,27 @@ export function ProfileIcon({ color = 'currentColor', size = DEFAULT_SIZE, class
   );
 }
 
+// Todo 아이콘 - 체크리스트 스타일
+export function TodoIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      <rect x="4" y="3.5" width="18" height="19" rx="3" stroke={color} strokeWidth="2.5" fill="none" />
+      <path d="M9 9.5L12 12.5L17 7.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <line x1="9" y1="16.5" x2="17" y2="16.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function TodoFilledIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" className={className}>
+      <rect x="4" y="3.5" width="18" height="19" rx="3" fill={color} />
+      <path d="M9 9.5L12 12.5L17 7.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <line x1="9" y1="16.5" x2="17" y2="16.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // Memories 아이콘 - 둥근 편지 봉투 스타일 (Threads 메시지함 느낌)
 export function MemoriesIcon({ color = 'currentColor', size = DEFAULT_SIZE, className }: IconProps) {
   return (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Images, PanelLeft, User, } from "lucide-react";
-import { CommunityFilledIcon, CommunityIcon, HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon, MemoriesIcon, MemoriesFilledIcon, ProfileFilledIcon, ProfileIcon } from "./icons";
+import { CommunityFilledIcon, CommunityIcon, HomeIcon, HomeFilledIcon, HeartIcon, HeartFilledIcon, TodoIcon, TodoFilledIcon, ProfileFilledIcon, ProfileIcon } from "./icons";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -23,9 +23,9 @@ const navItems: NavItem[] = [
   },
   {
     type: "custom",
-    icon: MemoriesIcon,
-    iconFilled: MemoriesFilledIcon,
-    href: "/memories",
+    icon: TodoIcon,
+    iconFilled: TodoFilledIcon,
+    href: "/todos",
   },
   {
     type: "custom",

@@ -43,6 +43,10 @@ const STATIC_ASSETS = [
   '/offline',
   '/logo_180.png',
   '/logo_512.png',
+  '/icon_192.png',
+  '/icon_512.png',
+  '/icon_192_maskable.png',
+  '/icon_512_maskable.png',
   '/heart.png',
 ];
 

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(sips:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(node:*)"
     ]
   }
 }

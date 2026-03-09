@@ -99,6 +99,23 @@ export type MemoryComment = {
   updated_at: string;
 };
 
+export type Todo = {
+  id: string;
+  couple_id: string;
+  created_by: string;
+  title: string;
+  description?: string;
+  category: 'date' | 'travel' | 'food' | 'gift' | 'home' | 'health' | 'etc';
+  priority: 'high' | 'medium' | 'low';
+  assigned_to?: string;
+  due_date?: string;
+  is_completed: boolean;
+  completed_at?: string;
+  completed_by?: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Anniversary = {
   id: string;
   couple_id: string;
